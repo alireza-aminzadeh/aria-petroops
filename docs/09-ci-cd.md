@@ -12,7 +12,7 @@ push/PR → main
    │       → Build ایمیج Docker → Push به ghcr.io
    │
    └─▶ Job "deploy"          (فقط روی main)
-           → SSH به 91.107.149.251 → docker compose pull && up -d
+           → SSH به 91.107.149.251 → pull ایمیج app از GHCR؛ فقط Edge روی سرور build می‌شود
 ```
 
 ## ۹.۲ پیش‌نیازها روی GitHub

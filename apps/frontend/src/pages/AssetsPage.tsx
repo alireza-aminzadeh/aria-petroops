@@ -26,6 +26,7 @@ export function AssetsPage() {
   const [tagEquipmentId, setTagEquipmentId] = useState('');
   const [tagName, setTagName] = useState('');
   const [unitOfMeasure, setUnitOfMeasure] = useState('bar');
+  const [rul, setRul] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const canEdit = hasRole('ADMIN', 'PLANNER', 'RELIABILITY_ENGINEER');
 
@@ -40,6 +41,19 @@ export function AssetsPage() {
     setEquipment(equipmentRows);
     if (!unitId && unitRows[0]) setUnitId(unitRows[0].id);
     if (!tagEquipmentId && equipmentRows[0]) setTagEquipmentId(equipmentRows[0].id);
+    for (const item of equipmentRows.slice(0, 8)) {
+      api<{ available: boolean; remainingDays?: number; healthIndex?: number }>(
+        `/ai/rul?equipmentId=${item.id}`,
+      )
+        .then((result) => {
+          if (!result.available || result.remainingDays == null) return;
+          setRul((prev) => ({
+            ...prev,
+            [item.id]: `${result.remainingDays} روز · HI ${result.healthIndex ?? '—'}`,
+          }));
+        })
+        .catch(() => undefined);
+    }
   }
 
   useEffect(() => {
@@ -159,7 +173,7 @@ export function AssetsPage() {
                               <td>{item.name}</td>
                               <td>{classLabel[item.equipmentClass] ?? item.equipmentClass}</td>
                               <td>{item.criticality}</td>
-                              <td className="text-muted">—</td>
+                              <td className="text-muted">{rul[item.id] ?? '—'}</td>
                               <td className="text-muted text-xs">
                                 {item.tags.map((tag) => tag.tagName).join('، ') || '—'}
                               </td>

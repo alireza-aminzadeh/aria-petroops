@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { createActor } from 'xstate';
 import { workOrderMachine } from '../src/modules/work-order/work-order.machine';
 import { upsertOperatorUser } from '../src/modules/auth/upsert-operator-user';
+import { CatalogSyncService } from '../src/modules/asset/catalog-sync.service';
 import { parseCsvReadings } from '../src/modules/telemetry/csv-parser';
 
 const prisma = new PrismaClient();
@@ -62,58 +63,10 @@ async function main() {
 
   await upsertOperatorUser(prisma, tenant.id);
 
-  const site = await prisma.site.upsert({
-    where: { id: '22222222-2222-2222-2222-222222222222' },
-    update: {},
-    create: {
-      id: '22222222-2222-2222-2222-222222222222',
-      tenantId: tenant.id,
-      name: 'سایت پالایش نمونه',
-      location: 'عسلویه',
-    },
-  });
+  const catalog = new CatalogSyncService(prisma);
+  await catalog.sync(tenant.id);
 
-  const unit = await prisma.unit.upsert({
-    where: { id: '33333333-3333-3333-3333-333333333333' },
-    update: {},
-    create: {
-      id: '33333333-3333-3333-3333-333333333333',
-      siteId: site.id,
-      name: 'واحد تقطیر اتمسفریک',
-      processType: 'distillation',
-    },
-  });
-
-  const pump = await prisma.equipment.upsert({
-    where: { tagNumber: 'P-101' },
-    update: {},
-    create: {
-      unitId: unit.id,
-      tagNumber: 'P-101',
-      name: 'پمپ خوراک واحد تقطیر',
-      equipmentClass: 'pump',
-      criticality: 'high',
-    },
-  });
-
-  const tags = [
-    { tagName: 'P-101.DISCHARGE_PRESSURE', unitOfMeasure: 'bar' },
-    { tagName: 'P-101.BEARING_TEMP', unitOfMeasure: 'degC' },
-    { tagName: 'P-101.VIBRATION', unitOfMeasure: 'mm/s' },
-  ];
-
-  for (const tag of tags) {
-    await prisma.tag.upsert({
-      where: { tagName: tag.tagName },
-      update: {},
-      create: {
-        equipmentId: pump.id,
-        tagName: tag.tagName,
-        unitOfMeasure: tag.unitOfMeasure,
-        dataType: 'numeric',
-      },
-    });
-  }
+  const pump = await prisma.equipment.findUniqueOrThrow({ where: { tagNumber: 'P-101' } });
 
   const csvPath = join(__dirname, '../fixtures/sample-readings.csv');
   try {

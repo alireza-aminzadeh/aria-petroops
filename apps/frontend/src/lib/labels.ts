@@ -8,7 +8,11 @@ export const statusLabel: Record<string, string> = {
   cancelled: 'لغوشده',
   submitted: 'ارسال‌شده',
   rejected: 'ردشده',
+  open: 'باز',
+  acknowledged: 'دیده‌شده',
   not_configured: 'پیکربندی‌نشده',
+  active: 'فعال',
+  returned: 'بازگشته',
 };
 
 export const priorityLabel: Record<string, string> = {

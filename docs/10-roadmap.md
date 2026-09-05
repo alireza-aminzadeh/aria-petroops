@@ -20,17 +20,24 @@
 - [x] استقرار اولیهٔ Production روی `91.107.149.251` + فعال‌سازی CI/CD روی ریپوی GitHub
 
 ## فاز ۲ — تله‌متری واقعی و اتصال AI
-- [ ] اتصال واقعی MQTT (`mqtt.js` + EMQX) و/یا OPC-UA (`node-opcua`) — **فقط outbound از Edge Agent در DMZ سایت مشتری**، هرگز نوشتن مستقیم به DCS/PLC
-- [ ] فعال‌سازی واقعی AI Gateway مرکزی (مشترک با SafeOps): مدل آنومالی (LSTM-AE/Isolation Forest) و RUL
-- [ ] ماژول انرژی/انتشارات (تراز انرژی، فلرینگ، کربن)
-- [ ] تحلیل آلارم پیشرفته (ISA-18.2 flood/chattering)
-- [ ] اتصال بین‌سامانه‌ای واقعی به SafeOps (equipment_tag مشترک)
+- [x] اتصال MQTT (`mqtt.js` + Mosquitto ۲.۰ روی سرور کم‌حافظه؛ مسیر مقیاس EMQX در docs/08) — Edge Agent فقط outbound، بدون نوشتن به DCS/PLC
+- [x] OPC-UA فقط‌خواندنی در Edge Agent وقتی `OPCUA_ENDPOINT_URL` ست شود (`node-opcua` اختیاری)
+- [x] موتور AI on-prem: Isolation Forest + RUL مهندسی (ISO 10816) + بستهٔ دانش محلی؛ `HttpAiGatewayAdapter` برای LSTM-AE مرکزی
+- [x] ماژول انرژی/انتشارات (تراز، فلر، کربن با ضریب پیش‌فرض قابل‌کالیبراسیون)
+- [x] تحلیل آلارم ISA-18.2 (flood / chattering / standing)
+- [x] اتصال بین‌سامانه‌ای به SafeOps از طریق `equipment_tag` (outbox + گیرندهٔ API)
 
 ## فاز ۳ — بلوغ
 - [ ] بهینه‌سازی تولید/Blending (OR-Tools/CVXPY از طریق AI Gateway)
 - [ ] پایش خطوط لوله (midstream) — تشخیص نشت
 - [ ] Digital Twin واحد فرآیندی
 - [ ] Temporal برای گردش‌کار TAR چندهفته‌ای (جای‌گزین XState فقط برای این مورد خاص)
+
+## معیار موفقیت فاز ۲
+- [x] تگ صنعتی از MQTT به `sensor_readings` می‌رسد و روی WebSocket پخش می‌شود (بدون نوشتن به OT).
+- [x] Isolation Forest رویداد `open` می‌سازد؛ توضیح و RUL در UI عدد واقعی می‌دهند نه «به‌زودی».
+- [x] KPI آلارم ISA-18.2 و داشبورد انرژی/کربن داده برمی‌گردانند.
+- [x] Outbox SafeOps برای `equipment_tag` ثبت می‌شود (تحویل وقتی `SAFEOPS_ENABLED=true`).
 
 ## معیار موفقیت فاز ۱ (Definition of Done)
 - [x] یک Work Order می‌تواند از `draft` تا `closed` بدون خطا و با Audit Trail کامل عبور کند.

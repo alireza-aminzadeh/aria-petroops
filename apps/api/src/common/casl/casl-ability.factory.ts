@@ -16,7 +16,8 @@ export type AppAction =
   | 'cancel'
   | 'start'
   | 'submit'
-  | 'import';
+  | 'import'
+  | 'acknowledge';
 
 export type AppSubject =
   | 'all'
@@ -24,7 +25,10 @@ export type AppSubject =
   | 'MaintenancePlan'
   | 'Equipment'
   | 'Tag'
-  | 'Telemetry';
+  | 'Telemetry'
+  | 'AnomalyEvent'
+  | 'AlarmEvent'
+  | 'Energy';
 
 export type AppAbility = MongoAbility<[AppAction, AppSubject]>;
 
@@ -55,6 +59,11 @@ export class CaslAbilityFactory {
       can('create', 'Equipment');
       can('create', 'Tag');
       can('import', 'Telemetry');
+      can('acknowledge', 'AnomalyEvent');
+    }
+
+    if (user.roles.includes('ENERGY_MANAGER')) {
+      can('manage', 'Energy');
     }
 
     if (user.roles.includes('TECHNICIAN')) {

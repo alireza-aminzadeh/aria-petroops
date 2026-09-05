@@ -11,6 +11,10 @@ export class StubAiGatewayAdapter implements AiGatewayPort {
     return false;
   }
 
+  method(): string {
+    return 'stub';
+  }
+
   async explainAnomaly(): Promise<AiAnswer> {
     return AiAnswer.unavailable(
       'سرویس تحلیل هوشمند آنومالی هنوز فعال نشده است.',

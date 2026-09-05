@@ -6,14 +6,16 @@
 
 ## وضعیت فعلی
 
-فاز ۱ هستهٔ BPMS روی Production فعال است: [https://petro.aria-ai.ir](https://petro.aria-ai.ir)
+فاز ۲ تله‌متری زنده + Isolation Forest روی Production فعال است: [https://petro.aria-ai.ir](https://petro.aria-ai.ir)
 
 | مورد | وضعیت |
 |---|---|
 | بک‌اند | NestJS 11 + Fastify + Prisma + XState + CASL |
 | فرانت‌اند | React 19 + Vite + Tailwind v4 (RTL) |
-| RAG/LLM | Stub — endpointها `503` می‌دهند |
-| OPC-UA/MQTT | پیاده‌سازی نشده (فاز ۲) |
+| تله‌متری | MQTT (Mosquitto) + Edge Agent خروجی‌فقط؛ OPC-UA فقط‌خواندنی اختیاری |
+| AI | Isolation Forest + RUL مهندسی (ISO 10816) + دانش محلی؛ LSTM-AE مرکزی با `AI_GATEWAY_URL` |
+| انرژی / آلارم | تراز انرژی، فلر، کربن پیش‌فرض؛ KPI آلارم ISA-18.2 |
+| SafeOps | Outbox به `POST /api/integrations/petroops/anomalies` |
 | استقرار Production | فعال روی `91.107.149.251` با CI/CD و HTTPS |
 
 ## اجرای محلی
@@ -22,10 +24,15 @@
 
 ```powershell
 Copy-Item .env.example .env   # اگر .env ندارید
-docker compose up -d postgres redis
+docker compose up -d postgres redis mqtt
+# Edge شبیه‌ساز (اختیاری):
+docker compose up -d edge
 pnpm --filter @aria/contracts build
 pnpm --filter @aria/api exec prisma migrate deploy
 pnpm --filter @aria/api exec prisma db seed
+# در .env لوکال:
+# INDUSTRIAL_INGESTION_ENABLED=true
+# MQTT_BROKER_URL=mqtt://127.0.0.1:1883
 pnpm --filter @aria/api start:dev
 # ترمینال دیگر:
 pnpm --filter @aria/frontend dev

@@ -4,12 +4,16 @@ import { join } from 'node:path';
 import { PrismaService } from '../../prisma/prisma.service';
 import { parseCsvReadings } from '../telemetry/csv-parser';
 import { upsertOperatorUser } from './upsert-operator-user';
+import { CatalogSyncService } from '../asset/catalog-sync.service';
 
 @Injectable()
 export class OperatorBootstrapService implements OnModuleInit {
   private readonly logger = new Logger(OperatorBootstrapService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly catalog: CatalogSyncService,
+  ) {}
 
   async onModuleInit() {
     try {
@@ -25,7 +29,8 @@ export class OperatorBootstrapService implements OnModuleInit {
         }));
 
       await upsertOperatorUser(this.prisma, tenant.id);
-      await this.ensureDemoCatalog(tenant.id);
+      await this.catalog.sync(tenant.id);
+      await this.seedHistoricCsv();
     } catch (error) {
       this.logger.warn(
         `Operator bootstrap skipped: ${error instanceof Error ? error.message : String(error)}`,
@@ -33,60 +38,7 @@ export class OperatorBootstrapService implements OnModuleInit {
     }
   }
 
-  private async ensureDemoCatalog(tenantId: string) {
-    const site = await this.prisma.site.upsert({
-      where: { id: '22222222-2222-2222-2222-222222222222' },
-      update: {},
-      create: {
-        id: '22222222-2222-2222-2222-222222222222',
-        tenantId,
-        name: 'سایت پالایش نمونه',
-        location: 'عسلویه',
-      },
-    });
-
-    const unit = await this.prisma.unit.upsert({
-      where: { id: '33333333-3333-3333-3333-333333333333' },
-      update: {},
-      create: {
-        id: '33333333-3333-3333-3333-333333333333',
-        siteId: site.id,
-        name: 'واحد تقطیر اتمسفریک',
-        processType: 'distillation',
-      },
-    });
-
-    const pump = await this.prisma.equipment.upsert({
-      where: { tagNumber: 'P-101' },
-      update: {},
-      create: {
-        unitId: unit.id,
-        tagNumber: 'P-101',
-        name: 'پمپ خوراک واحد تقطیر',
-        equipmentClass: 'pump',
-        criticality: 'high',
-      },
-    });
-
-    const tags = [
-      { tagName: 'P-101.DISCHARGE_PRESSURE', unitOfMeasure: 'bar' },
-      { tagName: 'P-101.BEARING_TEMP', unitOfMeasure: 'degC' },
-      { tagName: 'P-101.VIBRATION', unitOfMeasure: 'mm/s' },
-    ];
-
-    for (const tag of tags) {
-      await this.prisma.tag.upsert({
-        where: { tagName: tag.tagName },
-        update: {},
-        create: {
-          equipmentId: pump.id,
-          tagName: tag.tagName,
-          unitOfMeasure: tag.unitOfMeasure,
-          dataType: 'numeric',
-        },
-      });
-    }
-
+  private async seedHistoricCsv() {
     const csvPath = [
       join(process.cwd(), 'fixtures', 'sample-readings.csv'),
       join(__dirname, '..', '..', '..', 'fixtures', 'sample-readings.csv'),

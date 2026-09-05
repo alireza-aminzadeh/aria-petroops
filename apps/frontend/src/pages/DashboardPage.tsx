@@ -15,6 +15,7 @@ export function DashboardPage() {
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mqtt, setMqtt] = useState<string>('disabled');
   const [live, setLive] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const canImport = hasRole('ADMIN', 'PLANNER', 'RELIABILITY_ENGINEER');
@@ -24,6 +25,10 @@ export function DashboardPage() {
       setTags(data);
       setTagId((current) => current || data[0]?.id || '');
     });
+    fetch('/health')
+      .then((res) => res.json())
+      .then((body: { mqtt?: string }) => setMqtt(body.mqtt ?? 'disabled'))
+      .catch(() => setMqtt('unknown'));
   }, []);
 
   useEffect(() => {
@@ -115,10 +120,17 @@ export function DashboardPage() {
         <div>
           <h2 className="text-2xl font-semibold">داشبورد تله‌متری</h2>
           <p className="text-muted text-sm mt-1">
-            داده از CSV وارد می‌شود — اتصال زنده صنعتی در فاز ۲.
+            دادهٔ زنده از MQTT (Edge Agent) وارد Timescale می‌شود؛ CSV همچنان برای Historian دستی است.
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
+          <span
+            className={`text-xs rounded-full px-3 py-1 ${
+              mqtt === 'up' ? 'bg-mint/20 text-mint' : 'bg-panel-2 text-muted'
+            }`}
+          >
+            MQTT {mqtt}
+          </span>
           <span
             className={`text-xs rounded-full px-3 py-1 ${
               live ? 'bg-mint/20 text-mint' : 'bg-panel-2 text-muted'

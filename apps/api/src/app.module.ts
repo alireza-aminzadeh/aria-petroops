@@ -10,7 +10,11 @@ import { WorkOrderModule } from './modules/work-order/work-order.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
 import { AiGatewayModule } from './modules/ai-gateway/ai-gateway.module';
+import { AlarmModule } from './modules/alarm/alarm.module';
+import { EnergyModule } from './modules/energy/energy.module';
+import { IntegrationModule } from './modules/integration/integration.module';
 import { HealthController } from './health.controller';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -18,6 +22,7 @@ import { HealthController } from './health.controller';
       isGlobal: true,
       envFilePath: ['.env.local', '../../.env.local', '../../.env', '.env'],
     }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot({
       throttlers: [{ ttl: 60_000, limit: 120 }],
     }),
@@ -28,6 +33,9 @@ import { HealthController } from './health.controller';
     WorkOrderModule,
     MaintenanceModule,
     TelemetryModule,
+    AlarmModule,
+    EnergyModule,
+    IntegrationModule,
     AiGatewayModule,
   ],
   controllers: [HealthController],

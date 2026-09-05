@@ -103,6 +103,7 @@ jobs:
           host: ${{ secrets.PETROOPS_SSH_HOST }}
           username: ${{ secrets.PETROOPS_SSH_USER }}
           key: ${{ secrets.PETROOPS_SSH_KEY }}
+          command_timeout: 20m
           envs: GITHUB_TOKEN,IMAGE_TAG
           script: |
             set -euo pipefail
@@ -123,6 +124,6 @@ jobs:
               echo "IMAGE_TAG=${IMAGE_TAG}" >> .env
             fi
             echo "$GITHUB_TOKEN" | docker login ghcr.io -u alireza-aminzadeh --password-stdin
-            docker compose -f docker-compose.yml pull
-            docker compose -f docker-compose.yml up -d --remove-orphans
+            docker compose -f docker-compose.yml pull --ignore-buildable
+            docker compose -f docker-compose.yml up -d --build --remove-orphans
             docker image prune -f

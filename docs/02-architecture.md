@@ -13,23 +13,22 @@
                                                      │  NestJS 11 (Fastify)    │
                                                      │  - AssetModule          │
                                                      │  - WorkOrderModule      │
-                                                     │  - AnomalyModule (فاز۲) │
-                                                     │  - EnergyModule (فاز۲)  │
+                                                     │  - AnomalyModule        │
+                                                     │  - EnergyModule         │
+                                                     │  - AlarmModule          │
                                                      │  - TelemetryGateway(WS) │
-                                                     │  - AiGatewayModule(stub)│
+                                                     │  - AiGateway (on-prem) │
                                                      └──┬───────────┬──────────┘
                                                         │           │
                                           ┌─────────────▼───┐   ┌───▼──────┐
                                           │ PostgreSQL 16 +  │   │  Redis 7 │
-                                          │ TimescaleDB      │   │ (کش +    │
-                                          │ (hypertable تگ)  │   │ BullMQ)  │
+                                          │ TimescaleDB      │   │ (کش)     │
                                           └──────────────────┘   └──────────┘
 
-                        (فاز ۲+، غیرفعال)          (آینده — سرویس مستقل، فاز ۲+)
                  ┌──────────────────────┐    ┌──────────────────────────┐
-                 │ EMQX (MQTT Broker)   │    │ AI Gateway (FastAPI +    │
-                 │ node-opcua / jsmodbus│    │ Qdrant + LLM + مدل RUL)  │
-                 └──────────────────────┘    │ خارج از این سرور         │
+                 │ Mosquitto (MQTT)      │    │ AI Gateway مرکزی       │
+                 │ + Edge Agent outbound  │    │ (اختیاری: AI_GATEWAY_URL)
+                 └──────────────────────┘    │ LSTM-AE / RefineryGuard│
                                               └──────────────────────────┘
 ```
 
@@ -50,11 +49,13 @@ aria-petroops/
 │   │   │   │   │   ├── work-order.controller.ts
 │   │   │   │   │   └── work-order.service.ts
 │   │   │   │   ├── telemetry/
-│   │   │   │   │   ├── telemetry.gateway.ts    ← WebSocket Gateway
-│   │   │   │   │   └── csv-import.service.ts   ← ایمپورت دستی فاز ۱
-│   │   │   │   ├── ai-gateway/                 ← Placeholder (بخش ۶)
-│   │   │   │   │   ├── ai-gateway.port.ts
-│   │   │   │   │   └── stub-ai-gateway.adapter.ts
+│   │   │   │   │   ├── telemetry.gateway.ts
+│   │   │   │   │   ├── mqtt-ingest.service.ts
+│   │   │   │   │   └── csv-import.service.ts
+│   │   │   │   ├── alarm/ energy/ anomaly/ integration/
+│   │   │   │   ├── ai-gateway/
+│   │   │   │   │   ├── onprem-ai-gateway.adapter.ts
+│   │   │   │   │   └── http-ai-gateway.adapter.ts
 │   │   │   │   └── auth/
 │   │   │   ├── common/ (Guards, Interceptors, Filters)
 │   │   │   └── main.ts
@@ -80,7 +81,7 @@ aria-petroops/
 | `*.machine.ts` | تعریف XState برای گردش‌کار | `workOrderMachine` |
 | `*.gateway.ts` | WebSocket (Socket.io) برای استریم زنده | `TelemetryGateway` |
 | `entities/` | مدل TypeORM/Prisma | `Equipment`, `Tag` |
-| `ai-gateway/` | جدا از دامنه، پشت Interface (Dependency Inversion) | `StubAiGatewayAdapter` |
+| `ai-gateway/` | جدا از دامنه، پشت Interface (Dependency Inversion) | `OnPremAiGatewayAdapter` |
 
 ## ۲.۴ چندمستأجری
 مشابه SafeOps: **Row-Level Security در PostgreSQL** روی `tenant_id` از فاز ۱ فعال (حتی برای یک مشتری Pilot) تا رشد آینده بدون Migration بزرگ ممکن باشد.

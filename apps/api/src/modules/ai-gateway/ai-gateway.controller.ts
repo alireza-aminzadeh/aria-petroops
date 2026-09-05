@@ -4,6 +4,7 @@ import {
   Get,
   HttpStatus,
   Inject,
+  Param,
   Post,
   Query,
   Res,
@@ -16,6 +17,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthUser } from '../auth/auth-user';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiGatewayPort } from './ai-gateway.port';
+import { WorkOrderService } from '../work-order/work-order.service';
 
 @Controller()
 @UseGuards(JwtAuthGuard)
@@ -23,46 +25,99 @@ export class AiGatewayController {
   constructor(
     @Inject('AiGatewayPort') private readonly gateway: AiGatewayPort,
     private readonly prisma: PrismaService,
+    private readonly workOrders: WorkOrderService,
   ) {}
 
   @Get('ai/status')
   status() {
+    const enabled = this.gateway.isEnabled();
     return {
-      enabled: this.gateway.isEnabled(),
-      available: false,
-      message: 'سرویس AI Gateway مرکزی هنوز فعال نشده است. این پنل در فاز ۲ وصل می‌شود.',
+      enabled,
+      available: enabled,
+      method: this.gateway.method(),
+      message: enabled
+        ? 'موتور on-prem فعال است: Isolation Forest + RUL مهندسی + بستهٔ دانش محلی. LSTM-AE مرکزی وقتی AI_GATEWAY_URL ست شود وصل می‌شود.'
+        : 'سرویس AI Gateway غیرفعال است.',
     };
   }
 
   @Get('anomaly-events')
-  events() {
-    return { status: 'not_configured', items: [] };
+  async events(@CurrentUser() user: AuthUser, @Query('status') status?: string) {
+    const items = await this.prisma.anomalyEvent.findMany({
+      where: {
+        tenantId: user.tenantId,
+        ...(status ? { status } : {}),
+      },
+      include: {
+        equipment: { select: { id: true, tagNumber: true, name: true, criticality: true } },
+        tag: { select: { tagName: true } },
+      },
+      orderBy: { detectedAt: 'desc' },
+      take: 100,
+    });
+    return { status: 'ok', items };
   }
 
-  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Post('anomaly-events/:id/acknowledge')
+  async acknowledge(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    const event = await this.prisma.anomalyEvent.findFirst({
+      where: { id, tenantId: user.tenantId },
+    });
+    if (!event) {
+      return { statusCode: 404, message: 'رویداد یافت نشد.' };
+    }
+    return this.prisma.anomalyEvent.update({
+      where: { id },
+      data: { status: 'acknowledged', acknowledgedAt: new Date() },
+    });
+  }
+
+  @Post('anomaly-events/:id/work-order')
+  async openWorkOrder(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    const event = await this.prisma.anomalyEvent.findFirst({
+      where: { id, tenantId: user.tenantId },
+    });
+    if (!event?.equipmentId) {
+      return { statusCode: 404, message: 'رویداد یا تجهیز یافت نشد.' };
+    }
+    return this.workOrders.create(user, {
+      equipmentId: event.equipmentId,
+      description: event.summary ?? `دستور کار پیشنهادی از آنومالی ${id}`,
+      priority: 'high',
+    });
+  }
+
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @Post('ai/anomaly-explain')
   async explain(
     @CurrentUser() user: AuthUser,
     @Body() body: { query?: string; eventId?: string },
     @Res() reply: FastifyReply,
   ) {
-    const answer = await this.gateway.explainAnomaly(body.eventId ?? '');
+    const answer = await this.gateway.explainAnomaly(body.eventId ?? '', {
+      query: body.query,
+    });
     await this.prisma.aiQueryLog.create({
       data: {
         tenantId: user.tenantId,
         userId: user.id,
         queryText: body.query ?? body.eventId ?? '',
-        status: 'unavailable',
+        responseText: answer.text,
+        status: answer.available ? 'ok' : 'unavailable',
       },
     });
-    return reply.status(HttpStatus.SERVICE_UNAVAILABLE).send({
-      statusCode: 503,
+    const payload = {
+      available: answer.available,
+      text: answer.text,
+      citations: answer.citations,
       message: answer.unavailableReason,
-      available: false,
-    });
+    };
+    return reply
+      .status(answer.available ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE)
+      .send(payload);
   }
 
-  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @Post('ai/knowledge-query')
   async knowledge(
     @CurrentUser() user: AuthUser,
@@ -75,14 +130,18 @@ export class AiGatewayController {
         tenantId: user.tenantId,
         userId: user.id,
         queryText: body.query ?? '',
-        status: 'unavailable',
+        responseText: answer.text,
+        status: answer.available ? 'ok' : 'unavailable',
       },
     });
-    return reply.status(HttpStatus.SERVICE_UNAVAILABLE).send({
-      statusCode: 503,
-      message: answer.unavailableReason,
-      available: false,
-    });
+    return reply
+      .status(answer.available ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE)
+      .send({
+        available: answer.available,
+        text: answer.text,
+        citations: answer.citations,
+        message: answer.unavailableReason,
+      });
   }
 
   @Get('ai/rul')
@@ -90,14 +149,16 @@ export class AiGatewayController {
     @Query('equipmentId') equipmentId: string,
     @Res() reply: FastifyReply,
   ) {
-    const estimate = await this.gateway.estimateRemainingUsefulLife(
-      equipmentId ?? '',
-    );
-    return reply.status(HttpStatus.SERVICE_UNAVAILABLE).send({
-      statusCode: 503,
-      message: estimate.unavailableReason,
-      available: false,
-      remainingDays: estimate.remainingDays,
-    });
+    const estimate = await this.gateway.estimateRemainingUsefulLife(equipmentId ?? '');
+    return reply
+      .status(estimate.available ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE)
+      .send({
+        available: estimate.available,
+        remainingDays: estimate.remainingDays,
+        healthIndex: estimate.healthIndex,
+        method: estimate.method,
+        notes: estimate.notes,
+        message: estimate.unavailableReason,
+      });
   }
 }

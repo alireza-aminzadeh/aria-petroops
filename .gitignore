@@ -32,6 +32,16 @@ coverage/
 # ==== Secrets — هرگز کامیت نشود ====
 *.pem
 *.key
+# one-off host bootstrap scripts (may contain secrets)
+infra/scripts/login-test.sh
+infra/scripts/make-keys.sh
+infra/scripts/install-keys.sh
+infra/scripts/debug-github-ssh.sh
+infra/scripts/clone-repo.sh
+infra/scripts/inspect-contracts.sh
+infra/scripts/recreate-app.sh
+infra/scripts/restart-app.sh
+infra/scripts/restore-healthy.sh
 infra/certbot/conf/**
 !infra/certbot/conf/.gitkeep
 infra/certbot/www/**

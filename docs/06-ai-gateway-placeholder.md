@@ -1,7 +1,7 @@
-# ۶) جای‌گذاری RAG/LLM و مدل‌های ML بدون پیاده‌سازی (AI Gateway Placeholder)
+# ۶) AI Gateway — on-prem فاز ۲ + مسیر سرویس مرکزی
 
-## ۶.۱ تصمیم صریح
-مانند SafeOps: **بخش RAG/LLM و مدل‌های ML آنومالی/RUL در این فاز پیاده‌سازی نمی‌شوند**. جای آن در معماری، دیتابیس و UI کامل رزرو می‌شود.
+## ۶.۱ تصمیم فاز ۲
+روی سرور ۲ vCPU **LSTM-AE/PyTorch سرو نمی‌شود**. پیش‌فرض: `OnPremAiGatewayAdapter` (Isolation Forest + RUL مهندسی + بستهٔ دانش محلی). اگر `AI_GATEWAY_URL` ست شود، `HttpAiGatewayAdapter` به سرویس مرکزی FastAPI (LSTM-AE/RefineryGuard) وصل می‌شود. RAG/LLM همچنان خارج از این سرور است.
 
 ## ۶.۲ رابط (Port) — قرارداد پایدار
 
@@ -62,35 +62,25 @@ export class StubAiGatewayAdapter implements AiGatewayPort {
 }
 ```
 
-Wiring در Module:
-```typescript
-@Module({
-  providers: [
-    // فاز فعلی: همیشه Stub. فاز بعد: بر اساس AI_GATEWAY_ENABLED به HttpAiGatewayAdapter تغییر می‌کند
-    { provide: 'AiGatewayPort', useClass: StubAiGatewayAdapter },
-  ],
-  exports: ['AiGatewayPort'],
-})
-export class AiGatewayModule {}
-```
+Wiring در Module: اگر `AI_GATEWAY_ENABLED=false` باشد Stub؛ اگر `AI_GATEWAY_URL` پر باشد Http؛ در غیر این صورت OnPrem (Isolation Forest).
 
-## ۶.۴ نقاط اتصال UI (غیرفعال ولی موجود)
-| مکان | رفتار فعلی |
+## ۶.۴ نقاط اتصال UI
+| مکان | رفتار فاز ۲ |
 |---|---|
-| پنل «تحلیل هوشمند آنومالی» در صفحهٔ Asset Health | نمایش داده می‌شود با وضعیت «به‌زودی»؛ endpoint مربوطه `503` برمی‌گرداند |
-| ستون «RUL تخمینی» در جدول تجهیزات | همیشه «—» تا فعال‌سازی مدل واقعی |
-| دکمهٔ «پرسش از دستیار دانش فنی» | مشابه SafeOps، غیرفعال با پیام مشخص |
+| پنل آنومالی | فهرست رویدادهای Isolation Forest + توضیح |
+| ستون RUL تجهیزات | تخمین روز باقی‌مانده + شاخص سلامت |
+| دستیار دانش | جستجوی بستهٔ محلی ISA-18.2 / ISO 10816 / فلر |
 
-## ۶.۵ کانفیگ (از الان در `.env.example` موجود)
+## ۶.۵ کانفیگ
 ```
-AI_GATEWAY_ENABLED=false
+AI_GATEWAY_ENABLED=true
 AI_GATEWAY_URL=
 AI_GATEWAY_API_KEY=
 AI_GATEWAY_TIMEOUT_MS=8000
 ```
 
-## ۶.۶ جدول‌های دیتابیس از الان ساخته می‌شوند
-`anomaly_events` و `ai_query_log` (جزئیات در [`04-database-schema.md`](04-database-schema.md)) — خالی/بلااستفاده در فاز ۱.
+## ۶.۶ جدول‌های دیتابیس
+`anomaly_events`، `alarm_events`، `energy_meters`، `energy_readings`، `integration_deliveries`
 
 ## ۶.۷ معماری هدف: یک AI Gateway مرکزی مشترک با SafeOps
 ```

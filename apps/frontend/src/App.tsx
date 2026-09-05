@@ -8,6 +8,8 @@ import { WorkOrdersPage } from './pages/WorkOrdersPage';
 import { WorkOrderDetailPage } from './pages/WorkOrderDetailPage';
 import { MaintenancePage } from './pages/MaintenancePage';
 import { AiPage } from './pages/AiPage';
+import { AlarmsPage } from './pages/AlarmsPage';
+import { EnergyPage } from './pages/EnergyPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   if (!getToken()) {
@@ -33,6 +35,8 @@ export default function App() {
         <Route path="work-orders" element={<WorkOrdersPage />} />
         <Route path="work-orders/:id" element={<WorkOrderDetailPage />} />
         <Route path="maintenance" element={<MaintenancePage />} />
+        <Route path="alarms" element={<AlarmsPage />} />
+        <Route path="energy" element={<EnergyPage />} />
         <Route path="ai" element={<AiPage />} />
       </Route>
     </Routes>

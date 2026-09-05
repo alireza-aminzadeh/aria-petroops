@@ -16,6 +16,10 @@ export const createTagSchema = z.object({
   tagName: z.string().min(1).max(128),
   unitOfMeasure: z.string().min(1).max(32),
   dataType: z.enum(['numeric', 'boolean', 'string']).default('numeric'),
+  alarmLl: z.number().optional(),
+  alarmLo: z.number().optional(),
+  alarmHi: z.number().optional(),
+  alarmHh: z.number().optional(),
 });
 
 export type CreateEquipmentDto = z.infer<typeof createEquipmentSchema>;

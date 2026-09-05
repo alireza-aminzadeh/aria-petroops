@@ -18,7 +18,10 @@ model Tenant {
   maintenancePlans  MaintenancePlan[]
   auditLogs         AuditLog[]
   anomalyEvents     AnomalyEvent[]
+  alarmEvents       AlarmEvent[]
+  energyMeters      EnergyMeter[]
   aiQueryLogs       AiQueryLog[]
+  integrationDeliveries IntegrationDelivery[]
 
   @@map("tenants")
 }
@@ -61,8 +64,9 @@ model Unit {
   name        String
   processType String @map("process_type")
 
-  site      Site        @relation(fields: [siteId], references: [id])
-  equipment Equipment[]
+  site         Site         @relation(fields: [siteId], references: [id])
+  equipment    Equipment[]
+  energyMeters EnergyMeter[]
 
   @@index([siteId])
   @@map("units")
@@ -81,6 +85,8 @@ model Equipment {
   workOrders       WorkOrder[]
   maintenancePlans MaintenancePlan[]
   anomalyEvents    AnomalyEvent[]
+  alarmEvents      AlarmEvent[]
+  energyMeters     EnergyMeter[]
 
   @@index([unitId])
   @@map("equipment")
@@ -89,13 +95,19 @@ model Equipment {
 model Tag {
   id            String @id @default(uuid()) @db.Uuid
   equipmentId   String @map("equipment_id") @db.Uuid
-  tagName       String @unique @map("tag_name")
-  unitOfMeasure String @map("unit_of_measure")
-  dataType      String @default("numeric") @map("data_type")
+  tagName       String  @unique @map("tag_name")
+  unitOfMeasure String  @map("unit_of_measure")
+  dataType      String  @default("numeric") @map("data_type")
+  alarmLl       Float?  @map("alarm_ll")
+  alarmLo       Float?  @map("alarm_lo")
+  alarmHi       Float?  @map("alarm_hi")
+  alarmHh       Float?  @map("alarm_hh")
 
   equipment      Equipment       @relation(fields: [equipmentId], references: [id])
   readings       SensorReading[]
   anomalyEvents  AnomalyEvent[]
+  alarmEvents    AlarmEvent[]
+  energyMeters   EnergyMeter[]
 
   @@index([equipmentId])
   @@map("tags")
@@ -156,20 +168,100 @@ model MaintenancePlan {
 }
 
 model AnomalyEvent {
-  id          String   @id @default(uuid()) @db.Uuid
-  tenantId    String   @map("tenant_id") @db.Uuid
-  tagId       String?  @map("tag_id") @db.Uuid
-  equipmentId String?  @map("equipment_id") @db.Uuid
-  detectedAt  DateTime @default(now()) @map("detected_at") @db.Timestamptz(6)
-  score       Float?
-  status      String   @default("not_configured")
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  tagId              String?   @map("tag_id") @db.Uuid
+  equipmentId        String?   @map("equipment_id") @db.Uuid
+  detectedAt         DateTime  @default(now()) @map("detected_at") @db.Timestamptz(6)
+  score              Float?
+  status             String    @default("open")
+  method              String    @default("isolation_forest")
+  summary            String?
+  contributors       Json      @default("[]")
+  acknowledgedAt     DateTime? @map("acknowledged_at") @db.Timestamptz(6)
+  notifiedSafeopsAt  DateTime? @map("notified_safeops_at") @db.Timestamptz(6)
 
   tenant    Tenant     @relation(fields: [tenantId], references: [id])
   tag       Tag?       @relation(fields: [tagId], references: [id])
   equipment Equipment? @relation(fields: [equipmentId], references: [id])
 
-  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([equipmentId, detectedAt])
   @@map("anomaly_events")
+}
+
+model AlarmEvent {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  tagId       String    @map("tag_id") @db.Uuid
+  equipmentId String    @map("equipment_id") @db.Uuid
+  startedAt   DateTime  @map("started_at") @db.Timestamptz(6)
+  clearedAt   DateTime? @map("cleared_at") @db.Timestamptz(6)
+  priority    String
+  alarmType   String    @map("alarm_type")
+  state       String    @default("active")
+  value       Float
+  message     String
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  tag       Tag       @relation(fields: [tagId], references: [id])
+  equipment Equipment @relation(fields: [equipmentId], references: [id])
+
+  @@index([tenantId, startedAt])
+  @@index([tagId, state])
+  @@map("alarm_events")
+}
+
+model EnergyMeter {
+  id                    String @id @default(uuid()) @db.Uuid
+  tenantId              String @map("tenant_id") @db.Uuid
+  unitId                String? @map("unit_id") @db.Uuid
+  equipmentId           String? @map("equipment_id") @db.Uuid
+  tagId                 String? @map("tag_id") @db.Uuid
+  code                  String  @unique
+  name                  String
+  kind                  String
+  unitOfMeasure         String  @map("unit_of_measure")
+  emissionFactorKgCo2e Float   @map("emission_factor_kg_co2e")
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  unit      Unit?      @relation(fields: [unitId], references: [id])
+  equipment Equipment? @relation(fields: [equipmentId], references: [id])
+  tag       Tag?       @relation(fields: [tagId], references: [id])
+  readings  EnergyReading[]
+
+  @@index([tenantId])
+  @@map("energy_meters")
+}
+
+model EnergyReading {
+  time    DateTime @map("time") @db.Timestamptz(6)
+  meterId String   @map("meter_id") @db.Uuid
+  value   Float
+
+  meter EnergyMeter @relation(fields: [meterId], references: [id])
+
+  @@id([time, meterId])
+  @@index([meterId, time])
+  @@map("energy_readings")
+}
+
+model IntegrationDelivery {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  target     String
+  eventType  String    @map("event_type")
+  payload    Json
+  status     String    @default("pending")
+  attempts   Int       @default(0)
+  lastError  String?   @map("last_error")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, status])
+  @@map("integration_deliveries")
 }
 
 model AiQueryLog {

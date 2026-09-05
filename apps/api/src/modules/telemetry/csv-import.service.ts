@@ -5,16 +5,16 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../prisma/audit.service';
-import { TelemetryGateway } from './telemetry.gateway';
 import { parseCsvReadings } from './csv-parser';
 import { AuthUser } from '../auth/auth-user';
+import { TelemetryIngestService } from './telemetry-ingest.service';
 
 @Injectable()
 export class CsvImportService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
-    private readonly gateway: TelemetryGateway,
+    private readonly ingest: TelemetryIngestService,
   ) {}
 
   async importCsv(user: AuthUser, csvText: string) {
@@ -44,18 +44,12 @@ export class CsvImportService {
         throw new BadRequestException(`زمان نامعتبر: ${row.time}`);
       }
 
-      await this.prisma.sensorReading.upsert({
-        where: { time_tagId: { time, tagId: tag.id } },
-        update: { value: row.value, quality: row.quality ?? 0 },
-        create: {
-          time,
-          tagId: tag.id,
-          value: row.value,
-          quality: row.quality ?? 0,
-        },
+      await this.ingest.ingest({
+        tagName: row.tag_name,
+        time,
+        value: row.value,
+        quality: row.quality ?? 0,
       });
-
-      this.gateway.broadcastTagUpdate(tag.id, row.value, time, tag.tagName);
       imported += 1;
     }
 

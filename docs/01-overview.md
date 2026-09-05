@@ -32,18 +32,19 @@
 | ۷ | **پایش خطوط لوله (midstream)** | تشخیص نشت | فاز ۳ (اختیاری) |
 | ۸ | **پایش امنیت OT** | آنومالی Modbus/Profibus | اختیاری |
 
-## ۱.۵ محدودهٔ فاز فعلی (Phase 1 — BPMS Core)
-- ✅ ساخت **موتور گردش‌کار Work Order و تأیید برنامهٔ نت** (XState) با CRUD کامل
-- ✅ مدل دارایی ISA-95 (Site → Unit → Equipment → Tag) — بدون اتصال زندهٔ صنعتی
-- ✅ ایمپورت دستی CSV برای دادهٔ تگ (به‌جای اتصال real-time OPC-UA/MQTT از روز اول — طبق ریسک #۱ سند مرجع: «دسترسی به داده DCS/Historian سخت و سیاسی است»)
-- ✅ زیرساخت Auth/RBAC، Audit Trail
-- ✅ **جای‌گذاری معماری** برای RAG/LLM و مدل‌های ML آنومالی/RUL — بدون هیچ inference واقعی
-- ❌ عدم اتصال واقعی OPC-UA/MQTT/Modbus (فاز ۲+)
-- ❌ عدم پیاده‌سازی مدل آنومالی/RUL واقعی (فاز ۲ — بعد از AI Gateway)
+## ۱.۵ محدودهٔ فاز فعلی (Phase 2 — تله‌متری زنده و هوشمندی)
+- ✅ هستهٔ BPMS فاز ۱ (Work Order / ISA-95 / CSV / Auth)
+- ✅ MQTT ingest از Edge Agent (فقط outbound) + Timescale + WebSocket
+- ✅ OPC-UA فقط‌خواندنی در Edge وقتی endpoint ست شود
+- ✅ Isolation Forest، RUL مهندسی (ISO 10816)، دانش محلی؛ LSTM-AE مرکزی اختیاری
+- ✅ انرژی/فلر/کربن و KPI آلارم ISA-18.2
+- ✅ اعلان آنومالی باز به SafeOps روی `equipment_tag`
+- ❌ RAG/LLM سنگین و Digital Twin (فاز ۳)
+- ❌ نوشتن به DCS/PLC (عمداً ممنوع)
 
 ## ۱.۶ ارتباط با Aria SafeOps
 - رجیستر دارایی (equipment_tag) این سامانه پایهٔ فیلد `equipment_tag` در Permit/MOC سامانهٔ SafeOps است.
-- در فاز فعلی این پیوند فقط در سطح **قرارداد نام‌گذاری یکسان فیلد** طراحی می‌شود؛ اتصال HTTP واقعی بین دو سامانه در فاز ۲.
+- آنومالی باز از PetroOps به `POST /api/integrations/petroops/anomalies` فرستاده می‌شود تا مجوز روی همان تگ قابل بلوکه شدن باشد.
 
 ## ۱.۷ ورود
 نام کاربری مشترک هر دو سامانه: `alireza`. رمز لوکال `alireza`؛ رمز Production (یکسان با SafeOps) `Aria7x!Alireza#Ops2026`. جزئیات در [`README.md`](../README.md).

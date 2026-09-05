@@ -38,17 +38,20 @@ services:
     networks:
       - aria_petroops_net
 
+  # ایمیج app فقط از GHCR می‌آید. build روی سرور ۲vCPU باعث OOM می‌شود.
+  # Edge جداگانه روی سرور ساخته می‌شود (aria-petroops-edge:local).
   app:
     image: ghcr.io/alireza-aminzadeh/aria-petroops-app:${IMAGE_TAG:-latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: runtime
     restart: unless-stopped
     env_file: .env
     environment:
       ARIA_RUNTIME: production
       CI: "true"
+      MQTT_BROKER_URL: mqtt://mqtt:1883
+      MQTT_USERNAME: ${MQTT_USERNAME:-petroops}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+      INDUSTRIAL_INGESTION_ENABLED: ${INDUSTRIAL_INGESTION_ENABLED:-true}
+      AI_GATEWAY_ENABLED: ${AI_GATEWAY_ENABLED:-true}
     user: "1000:1000"
     volumes:
       - ./infra/docker/api-prod.sh:/api-prod.sh:ro
@@ -56,6 +59,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      mqtt:
         condition: service_healthy
     deploy:
       resources:
@@ -111,22 +116,68 @@ services:
     networks:
       - aria_petroops_net
 
-  # ---- EMQX (بروکر MQTT برای Ingestion صنعتی) — فاز ۲، فعلاً غیرفعال ----
-  # emqx:
-  #   image: emqx/emqx:5.8-alpine
-  #   restart: unless-stopped
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 256M
-  #       reservations:
-  #         memory: 128M
-  #   networks:
-  #     - aria_petroops_net
+  # Mosquitto 2.0 به‌جای EMQX روی سرور 3.7GiB — MQTT 5، سبک، بدون داشبورد عمومی.
+  # پورت 1883 فقط داخل شبکهٔ Docker است (هرگز 0.0.0.0).
+  mqtt:
+    image: eclipse-mosquitto:2.0.20
+    restart: unless-stopped
+    # volume نام‌گذاری‌شده اغلب root است؛ entrypoint با root فایل رمز را می‌سازد و به mosquitto می‌دهد
+    user: "0:0"
+    command: ["/bin/sh", "/mosquitto/config/docker-entrypoint.sh"]
+    environment:
+      MQTT_USERNAME: ${MQTT_USERNAME:-petroops}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    volumes:
+      - ./infra/mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./infra/mqtt/docker-entrypoint.sh:/mosquitto/config/docker-entrypoint.sh:ro
+      - mqtt_data:/mosquitto/data
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_pub -h 127.0.0.1 -t petroops/v1/.health -m ping -u \"$$MQTT_USERNAME\" -P \"$$MQTT_PASSWORD\" -q 0"]
+      interval: 8s
+      timeout: 5s
+      retries: 12
+      start_period: 12s
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+        reservations:
+          memory: 32M
+    networks:
+      - aria_petroops_net
+
+  # Edge Agent: فقط خروجی (MQTT publish). هرگز به DCS/PLC نمی‌نویسد.
+  # اگر OPCUA_ENDPOINT_URL خالی باشد، شبیه‌ساز واحد نمونه را پخش می‌کند.
+  edge:
+    build:
+      context: ./infra/edge-agent
+      dockerfile: Dockerfile
+    image: aria-petroops-edge:local
+    restart: unless-stopped
+    user: "1000:1000"
+    environment:
+      MQTT_BROKER_URL: mqtt://mqtt:1883
+      MQTT_USERNAME: ${MQTT_USERNAME:-petroops}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+      OPCUA_ENDPOINT_URL: ${OPCUA_ENDPOINT_URL:-}
+      OPCUA_NODE_MAP: ${OPCUA_NODE_MAP:-{}}
+      EDGE_INTERVAL_MS: ${EDGE_INTERVAL_MS:-2000}
+    depends_on:
+      mqtt:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 96M
+        reservations:
+          memory: 48M
+    networks:
+      - aria_petroops_net
 
 volumes:
   pgdata:
   redisdata:
+  mqtt_data:
 
 networks:
   aria_petroops_net:

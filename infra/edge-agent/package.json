@@ -1,0 +1,13 @@
+{
+  "name": "aria-petroops-edge-agent",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Outbound-only plant edge: MQTT publish + optional OPC-UA subscribe",
+  "scripts": {
+    "start": "node src/index.mjs"
+  },
+  "dependencies": {
+    "mqtt": "^5.14.1"
+  }
+}

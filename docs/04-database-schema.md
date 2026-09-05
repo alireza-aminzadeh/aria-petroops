@@ -25,7 +25,7 @@ erDiagram
 | `sites` | `id`, `tenant_id`, `name`, `location` |
 | `units` | `id`, `site_id` FK، `name`, `process_type` (مثلاً «واحد تقطیر») |
 | `equipment` | `id`, `unit_id` FK، `tag_number` (شناسهٔ یکتای صنعتی، مثل `P-101`)، `equipment_class` (پمپ/کمپرسور/توربین)، `criticality` |
-| `tags` | `id`, `equipment_id` FK، `tag_name` (مثل `P-101.DISCHARGE_PRESSURE`)، `unit_of_measure`، `data_type` |
+| `tags` | `id`, `equipment_id` FK، `tag_name`، `unit_of_measure`، `data_type`، حدود آلارم `alarm_ll/lo/hi/hh` |
 
 ### `sensor_readings` (Hypertable TimescaleDB)
 | ستون | نوع | توضیح |
@@ -46,7 +46,7 @@ FROM sensor_readings
 GROUP BY tag_id, bucket;
 ```
 
-> در فاز ۱، این جدول از طریق **CSV Import** (نه اتصال زنده) پر می‌شود — طبق تصمیم آگاهانهٔ محدودسازی scope فعلی.
+> در فاز ۲ داده از MQTT/Edge و CSV هر دو وارد hypertable می‌شود.
 
 ### `users`
 | ستون | نوع | توضیح |
@@ -82,29 +82,24 @@ GROUP BY tag_id, bucket;
 | status | varchar | `draft` / `submitted` / `approved` / `rejected` |
 | next_due_at | date | |
 
-### `anomaly_events` — **جدول Placeholder (بخش ۶ — بدون تولید واقعی داده تا فعال‌سازی AI Gateway)**
+### `anomaly_events`
 | ستون | نوع | توضیح |
 |---|---|---|
 | id | uuid PK | |
-| tag_id | uuid FK nullable | |
+| tag_id | uuid FK nullable | تگ با بیشترین سهم |
 | equipment_id | uuid FK nullable | |
 | detected_at | timestamptz | |
-| score | double precision nullable | خروجی مدل (LSTM-AE/Isolation Forest) — فاز ۲ |
-| status | varchar | همیشه `not_configured` تا فعال‌سازی AI Gateway |
+| score | double precision nullable | امتیاز Isolation Forest (۰–۱) |
+| status | varchar | `open` / `acknowledged` / `closed` |
+| method | varchar | پیش‌فرض `isolation_forest` |
+| summary | text | |
+| contributors | jsonb | تگ‌های مؤثر (z-score) |
 
-### `ai_query_log` — **جدول Placeholder مشترک با AI Gateway**
-همان ساختار `aria-safeops` (برای یکسان‌سازی وقتی سرویس AI Gateway مرکزی مشترک بین دو سامانه فعال شد).
+### `alarm_events` / `energy_meters` / `energy_readings` / `integration_deliveries`
+آلارم حد تگ (ISA-18.2)، کنتور انرژی/کربن (hypertable)، و outbox اتصال به SafeOps. جزئیات در migration `20260905200000_phase2_telemetry_ai`.
 
-### `users`
-| ستون | نوع | توضیح |
-|---|---|---|
-| id | uuid PK | |
-| tenant_id | uuid FK → tenants | |
-| username | text unique | شناسهٔ ورود (در لوکال و Production: `alireza`) |
-| email | text unique | |
-| password_hash | text | bcrypt |
-| roles | jsonb | مثلاً `["ADMIN"]` |
-| full_name | text | |
+### `ai_query_log`
+لاگ پرسش از موتور on-prem یا Gateway مرکزی.
 
 ### `audit_log` (Hash-chain)
 همان ساختار مفهومی SafeOps (`sha256(prev_hash + ...)`) — پیاده‌سازی جدا در TypeORM/Prisma.
@@ -116,4 +111,4 @@ GROUP BY tag_id, bucket;
 ```sql
 SELECT add_retention_policy('sensor_readings', INTERVAL '2 years');
 ```
-(در فاز ۱، چون فقط CSV دستی و حجم محدود است، این Policy تعریف می‌شود ولی اثر عملی محدودی دارد.)
+(در فاز ۲ با MQTT زنده این Policy روی hypertable اعمال می‌شود.)

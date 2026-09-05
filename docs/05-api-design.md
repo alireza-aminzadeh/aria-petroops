@@ -54,30 +54,23 @@ export class WorkOrderController {
 }
 ```
 
-## ۵.۳ WebSocket Gateway (استریم تگ زنده — فاز ۱ فقط ساختار، بدون منبع زندهٔ واقعی)
+## ۵.۳ WebSocket Gateway و MQTT
+مسیر WS: `/ws/tags`. فاز ۲: ingest از MQTT `petroops/v1/{tag}` توسط `MqttIngestService`، سپس Prisma + broadcast.
 
-```typescript
-@WebSocketGateway({ namespace: '/ws/tags', cors: { origin: process.env.WS_CORS_ORIGIN } })
-export class TelemetryGateway {
-  @WebSocketServer() server: Server;
+Edge Agent فقط publish می‌کند. Nest فقط subscribe. OPC-UA فقط‌خواندنی در Edge است، نه در API.
 
-  // فاز ۱: فقط broadcast دادهٔ CSV import شده (شبیه‌سازی)
-  // فاز ۲: اتصال واقعی به Ingestion pipeline از MQTT/OPC-UA
-  broadcastTagUpdate(tagId: string, value: number, timestamp: Date) {
-    this.server.emit(`tag:${tagId}`, { value, timestamp });
-  }
-}
-```
-مسیر در Nginx: `/ws/tags` (پیکربندی proxy_pass + Upgrade headers در [`infra/nginx/conf.d/app.conf`](../infra/nginx/conf.d/app.conf)).
-
-## ۵.۴ Endpoint های AI Gateway (Placeholder — بخش ۶)
-| متد | مسیر | وضعیت فعلی |
+## ۵.۴ Endpoint های AI / انرژی / آلارم (فاز ۲)
+| متد | مسیر | وضعیت |
 |---|---|---|
-| `GET` | `/api/ai/status` | `200` با `enabled: false` |
-| `POST` | `/api/ai/anomaly-explain` | همیشه `503 Service Unavailable` |
-| `POST` | `/api/ai/knowledge-query` | همیشه `503 Service Unavailable` |
-| `GET` | `/api/ai/rul?equipmentId=` | همیشه `503 Service Unavailable` |
-| `GET` | `/api/anomaly-events` | `{ status: "not_configured", items: [] }` |
+| `GET` | `/api/ai/status` | `enabled` + `method` (on-prem یا http) |
+| `POST` | `/api/ai/anomaly-explain` | Isolation Forest + دانش محلی |
+| `POST` | `/api/ai/knowledge-query` | جستجوی بستهٔ دانش محلی (نه LLM) |
+| `GET` | `/api/ai/rul?equipmentId=` | RUL مهندسی ISO 10816 |
+| `GET` | `/api/anomaly-events` | فهرست رویدادها |
+| `POST` | `/api/anomaly-events/{id}/acknowledge` | دیده‌شدن |
+| `POST` | `/api/anomaly-events/{id}/work-order` | دستور کار پیشنهادی |
+| `GET` | `/api/alarms` / `/api/alarms/kpis` | ISA-18.2 |
+| `GET` | `/api/energy/dashboard` | تراز انرژی و CO2e |
 
 ## ۵.۵ Rate Limiting و Throttling
 `@nestjs/throttler` روی `/api/auth/login` و `/api/ai/*` — مطابق الزام امنیتی مشترک با SafeOps.

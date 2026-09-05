@@ -94,6 +94,10 @@ export class AssetService {
         tagName: dto.tagName,
         unitOfMeasure: dto.unitOfMeasure,
         dataType: dto.dataType,
+        alarmLl: dto.alarmLl,
+        alarmLo: dto.alarmLo,
+        alarmHi: dto.alarmHi,
+        alarmHh: dto.alarmHh,
       },
     });
     await this.audit.record({

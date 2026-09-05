@@ -7,7 +7,9 @@ const links = [
   { to: '/assets', label: 'دارایی‌ها (ISA-95)' },
   { to: '/work-orders', label: 'دستور کار' },
   { to: '/maintenance', label: 'برنامه نت' },
-  { to: '/ai', label: 'دستیار هوشمند' },
+  { to: '/alarms', label: 'آلارم ISA-18.2' },
+  { to: '/energy', label: 'انرژی و کربن' },
+  { to: '/ai', label: 'سلامت دارایی / AI' },
 ];
 
 export function Shell() {

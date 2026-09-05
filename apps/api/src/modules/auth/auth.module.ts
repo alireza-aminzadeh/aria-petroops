@@ -9,10 +9,12 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { OperatorBootstrapService } from './operator-bootstrap.service';
+import { CatalogModule } from '../asset/catalog.module';
 
 @Module({
   imports: [
     PrismaModule,
+    CatalogModule,
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],

@@ -8,5 +8,6 @@ import { AuthModule } from '../auth/auth.module';
   imports: [PrismaModule, AuthModule],
   controllers: [WorkOrderController],
   providers: [WorkOrderService],
+  exports: [WorkOrderService],
 })
 export class WorkOrderModule {}
