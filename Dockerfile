@@ -61,8 +61,10 @@ COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY infra/docker/api-prod.sh /api-prod.sh
 
-# node:alpine already has uid 1000 (`node`); do not create a duplicate user.
-RUN chmod +x /api-prod.sh && chown -R node:node /app /api-prod.sh
+RUN mkdir -p /app/node_modules/@aria \
+    && ln -sfn /app/packages/contracts /app/node_modules/@aria/contracts \
+    && chmod +x /api-prod.sh \
+    && chown -R node:node /app /api-prod.sh
 
 USER node
 

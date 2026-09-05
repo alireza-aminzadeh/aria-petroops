@@ -2,7 +2,8 @@
 set -eu
 cd /app
 export CI=true
-export NODE_PATH="/app/apps/api/node_modules:/app/node_modules${NODE_PATH:+:$NODE_PATH}"
+mkdir -p /app/node_modules/@aria
+ln -sfn /app/packages/contracts /app/node_modules/@aria/contracts
 
 PRISMA_JS=""
 if [ -f /app/node_modules/prisma/build/index.js ]; then
