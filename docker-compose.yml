@@ -132,7 +132,7 @@ services:
       - ./infra/mqtt/docker-entrypoint.sh:/mosquitto/config/docker-entrypoint.sh:ro
       - mqtt_data:/mosquitto/data
     healthcheck:
-      test: ["CMD-SHELL", "mosquitto_pub -h 127.0.0.1 -t petroops/v1/.health -m ping -u \"$$MQTT_USERNAME\" -P \"$$MQTT_PASSWORD\" -q 0"]
+      test: ["CMD-SHELL", "mosquitto_sub -h 127.0.0.1 -t '$$SYS/broker/uptime' -C 1 -W 3 -u \"$$MQTT_USERNAME\" -P \"$$MQTT_PASSWORD\" >/dev/null"]
       interval: 8s
       timeout: 5s
       retries: 12

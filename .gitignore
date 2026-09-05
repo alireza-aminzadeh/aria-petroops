@@ -34,6 +34,7 @@ coverage/
 *.key
 # one-off host bootstrap scripts (may contain secrets)
 infra/scripts/login-test.sh
+infra/scripts/login-body.json
 infra/scripts/make-keys.sh
 infra/scripts/install-keys.sh
 infra/scripts/debug-github-ssh.sh

@@ -126,4 +126,5 @@ jobs:
             echo "$GITHUB_TOKEN" | docker login ghcr.io -u alireza-aminzadeh --password-stdin
             docker compose -f docker-compose.yml pull --ignore-buildable
             docker compose -f docker-compose.yml up -d --build --remove-orphans
+            docker compose -f docker-compose.yml restart nginx
             docker image prune -f
