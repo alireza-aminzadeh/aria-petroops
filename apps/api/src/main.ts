@@ -51,7 +51,21 @@ async function bootstrap() {
     await app.register(fastifyStatic, {
       root: publicDir,
       prefix: '/',
-      wildcard: true,
+      wildcard: false,
+    });
+    const fastify = app.getHttpAdapter().getInstance();
+    fastify.setNotFoundHandler((request, reply) => {
+      const url = request.raw.url ?? '';
+      if (
+        url.startsWith('/api') ||
+        url.startsWith('/health') ||
+        url.startsWith('/socket.io') ||
+        url.startsWith('/ws')
+      ) {
+        reply.code(404).send({ statusCode: 404, message: 'Not Found' });
+        return;
+      }
+      return reply.sendFile('index.html');
     });
   }
 

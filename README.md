@@ -6,7 +6,7 @@
 
 ## وضعیت فعلی
 
-فاز ۱ هستهٔ BPMS پیاده‌سازی شده است: NestJS 11 + Prisma + XState Work Order + ISA-95 + ایمپورت CSV + WebSocket + JWT/CASL + فرانت React.
+فاز ۱ هستهٔ BPMS روی Production فعال است: [https://petro.aria-ai.ir](https://petro.aria-ai.ir)
 
 | مورد | وضعیت |
 |---|---|
@@ -14,7 +14,7 @@
 | فرانت‌اند | React 19 + Vite + Tailwind v4 (RTL) |
 | RAG/LLM | Stub — endpointها `503` می‌دهند |
 | OPC-UA/MQTT | پیاده‌سازی نشده (فاز ۲) |
-| استقرار Production | کد Docker/CI آماده؛ Docker/UFW/DNS سرور هنوز انجام نشده |
+| استقرار Production | فعال روی `91.107.149.251` با CI/CD و HTTPS |
 
 ## اجرای محلی
 

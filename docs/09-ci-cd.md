@@ -74,5 +74,6 @@ docker compose -f docker-compose.yml up -d
 
 هر دو پایپ‌لاین کاملاً مستقل‌اند — Deploy یکی هرگز روی دیگری اثر نمی‌گذارد (سرورهای جدا، ریپوهای جدا، Secrets جدا).
 
-## ۹.۸ محدودیت فعلی (صادقانه)
-تا زمانی که مونوریپوی واقعی (`apps/api`, `package.json`, `pnpm-lock.yaml`) ساخته نشود، Job «test» و «build-and-push» قابل اجرا نیستند. این فایل CI/CD **قالب آماده** است.
+## ۹.۸ وضعیت فعلی
+ریپو: [github.com/alireza-aminzadeh/aria-petroops](https://github.com/alireza-aminzadeh/aria-petroops)
+Production: `https://petro.aria-ai.ir` روی `91.107.149.251` — تست، build به GHCR، و deploy با SSH کاربر `deploy` فعال است.

@@ -3,10 +3,10 @@
 ## فاز ۰ — پیش‌نیاز زیرساخت
 - [x] بررسی و مستندسازی معماری، DB schema، API design، BPMS، امنیت (همین مستندات)
 - [x] بررسی SSH read-only سرور `91.107.149.251` (مشخصات واقعی گرفته شد)
-- [ ] نصب Docker Engine + Compose plugin روی سرور
-- [ ] ساخت کاربر `deploy` غیر-root + فعال‌سازی UFW
-- [ ] ساخت ریپوی GitHub + اتصال Secrets برای CI/CD
-- [ ] رفع مشکل DNS زیردامنهٔ `petro.aria-ai.ir` (باید A record به `91.107.149.251` اشاره کند)
+- [x] نصب Docker Engine + Compose plugin روی سرور
+- [x] ساخت کاربر `deploy` غیر-root + فعال‌سازی UFW
+- [x] ساخت ریپوی GitHub + اتصال Secrets برای CI/CD
+- [x] DNS زیردامنهٔ `petro.aria-ai.ir` به `91.107.149.251` + گواهی Let's Encrypt
 
 ## فاز ۱ — MVP: هستهٔ BPMS
 - [x] اسکلت‌سازی مونوریپو Turborepo + pnpm (`apps/api` با NestJS 11، `apps/frontend` با React+Vite)
@@ -17,7 +17,7 @@
 - [x] JWT Auth + RBAC + CASL پایه
 - [x] فرانت‌اند: فهرست/ایجاد تجهیزات (ISA-95)، فرم Work Order با مسیر ممیزی، داشبورد ECharts + استریم WebSocket
 - [x] AI Gateway Placeholder (Port + Stub + جدول‌های DB) — **بدون هیچ inference واقعی**
-- [ ] استقرار اولیهٔ Production روی `91.107.149.251` + فعال‌سازی CI/CD روی ریپوی GitHub (کد پایپ‌لاین آماده است؛ سرور/DNS/Secrets هنوز انجام نشده)
+- [x] استقرار اولیهٔ Production روی `91.107.149.251` + فعال‌سازی CI/CD روی ریپوی GitHub
 
 ## فاز ۲ — تله‌متری واقعی و اتصال AI
 - [ ] اتصال واقعی MQTT (`mqtt.js` + EMQX) و/یا OPC-UA (`node-opcua`) — **فقط outbound از Edge Agent در DMZ سایت مشتری**، هرگز نوشتن مستقیم به DCS/PLC
@@ -37,4 +37,4 @@
 - [x] CSV نمونه با موفقیت import و در WebSocket به فرانت broadcast می‌شود (حتی اگر منبع واقعی صنعتی نباشد).
 - [x] تست‌های Jest برای ماشین حالت، persist snapshot، CASL و hash-chain ممیزی.
 - [x] پنل‌های AI Gateway در UI دیده می‌شوند ولی صادقانه «به‌زودی» نشان می‌دهند، بدون کرش.
-- [ ] پایپ‌لاین CI/CD تا Deploy روی `91.107.149.251` — وابسته به GitHub remote، Secrets و آماده‌سازی سرور (خارج از کد).
+- [x] پایپ‌لاین CI/CD تا Deploy روی `91.107.149.251`

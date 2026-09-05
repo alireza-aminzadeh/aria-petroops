@@ -90,7 +90,7 @@ docker compose logs -f app
 ```
 
 ## ۸.۵ گواهی SSL
-مانند SafeOps — DNS زیردامنهٔ `petro.aria-ai.ir` باید به `91.107.149.251` اشاره کند (طبق سند مرجع، این زیردامنه هم قبلاً ۵۰۰ برمی‌گردانده — نیاز به بررسی/رفع).
+DNS زیردامنهٔ `petro.aria-ai.ir` به `91.107.149.251` اشاره می‌کند. گواهی Let's Encrypt با webroot صادر می‌شود. Nginx تا قبل از وجود فایل گواهی فقط HTTP سرو می‌کند؛ بعد از صدور، کانتینر nginx را restart کنید تا `ssl.conf` فعال شود.
 
 ```bash
 apt-get install -y certbot
