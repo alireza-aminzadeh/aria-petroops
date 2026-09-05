@@ -60,6 +60,9 @@ if [ -f /tmp/petroops_github ]; then
   if [ -f /tmp/petroops_github.pub ]; then
     install -m 644 -o deploy -g deploy /tmp/petroops_github.pub /home/deploy/.ssh/id_ed25519_github.pub
   fi
+  ssh-keyscan -t ed25519,rsa github.com >> /home/deploy/.ssh/known_hosts 2>/dev/null || true
+  chown deploy:deploy /home/deploy/.ssh/known_hosts
+  chmod 644 /home/deploy/.ssh/known_hosts
   cat > /home/deploy/.ssh/config <<'EOF'
 Host github.com
   HostName github.com
