@@ -1,0 +1,80 @@
+# =====================================================================
+# Aria PetroOps — افزوده‌های محیط توسعهٔ محلی (Docker Desktop Windows)
+#
+# UI: http://localhost  (Nginx روی 127.0.0.1:80؛ Nest و Vite روی میزبان)
+# همزمان با SafeOps اجرا نشود — هر دو روی پورت ۸۰ لوکال هستند.
+# علت: DNS داخلی Docker به registry.npmjs.org نمی‌رسد (ECONNREFUSED 127.218.x).
+#
+# Postgres debug: 127.0.0.1:15432
+# Redis debug:    127.0.0.1:16379
+# طبق قاعدهٔ امنیتی: فقط bind به 127.0.0.1
+# =====================================================================
+
+services:
+  nginx:
+    ports: !override
+      - "127.0.0.1:80:80"
+    command: ["nginx", "-g", "daemon off;"]
+    volumes:
+      - ./infra/nginx/dev:/etc/nginx/conf.d:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on: !override
+      postgres:
+        condition: service_healthy
+
+  app:
+    profiles: ["full-docker"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    user: "0:0"
+    environment:
+      NODE_ENV: development
+      ARIA_RUNTIME: local
+      SEED_ALIREZA_PASSWORD: alireza
+    command: ["sh", "/app/infra/docker/api-dev.sh"]
+    volumes:
+      - ./:/app
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 256M
+
+  frontend:
+    profiles: ["full-docker"]
+    image: node:22-alpine
+    restart: unless-stopped
+    working_dir: /app
+    user: "0:0"
+    command: ["sh", "/app/infra/docker/frontend-dev.sh"]
+    volumes:
+      - ./:/app
+    environment:
+      VITE_API_BASE: /api
+    networks:
+      - aria_petroops_net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+
+  postgres:
+    ports:
+      - "127.0.0.1:15432:5432"
+
+  redis:
+    ports:
+      - "127.0.0.1:16379:6379"

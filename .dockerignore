@@ -1,0 +1,13 @@
+.git
+.github
+docs
+**/node_modules
+**/.turbo
+**/dist
+**/.env
+apps/frontend/dist
+infra/certbot/conf
+infra/certbot/www
+infra/certbot/work
+infra/certbot/logs
+

@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  users             User[]
+  sites             Site[]
+  workOrders        WorkOrder[]
+  maintenancePlans  MaintenancePlan[]
+  auditLogs         AuditLog[]
+  anomalyEvents     AnomalyEvent[]
+  aiQueryLogs       AiQueryLog[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  email        String   @unique
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  roles        Json     @default("[]")
+  fullName     String   @map("full_name")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant              Tenant            @relation(fields: [tenantId], references: [id])
+  assignedWorkOrders  WorkOrder[]       @relation("AssignedWorkOrders")
+  createdWorkOrders   WorkOrder[]       @relation("CreatedWorkOrders")
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+model Site {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  location  String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  units  Unit[]
+
+  @@index([tenantId])
+  @@map("sites")
+}
+
+model Unit {
+  id          String @id @default(uuid()) @db.Uuid
+  siteId      String @map("site_id") @db.Uuid
+  name        String
+  processType String @map("process_type")
+
+  site      Site        @relation(fields: [siteId], references: [id])
+  equipment Equipment[]
+
+  @@index([siteId])
+  @@map("units")
+}
+
+model Equipment {
+  id             String @id @default(uuid()) @db.Uuid
+  unitId         String @map("unit_id") @db.Uuid
+  tagNumber      String @unique @map("tag_number")
+  name           String
+  equipmentClass String @map("equipment_class")
+  criticality    String
+
+  unit             Unit              @relation(fields: [unitId], references: [id])
+  tags             Tag[]
+  workOrders       WorkOrder[]
+  maintenancePlans MaintenancePlan[]
+  anomalyEvents    AnomalyEvent[]
+
+  @@index([unitId])
+  @@map("equipment")
+}
+
+model Tag {
+  id            String @id @default(uuid()) @db.Uuid
+  equipmentId   String @map("equipment_id") @db.Uuid
+  tagName       String @unique @map("tag_name")
+  unitOfMeasure String @map("unit_of_measure")
+  dataType      String @default("numeric") @map("data_type")
+
+  equipment      Equipment       @relation(fields: [equipmentId], references: [id])
+  readings       SensorReading[]
+  anomalyEvents  AnomalyEvent[]
+
+  @@index([equipmentId])
+  @@map("tags")
+}
+
+model SensorReading {
+  time    DateTime @map("time") @db.Timestamptz(6)
+  tagId   String   @map("tag_id") @db.Uuid
+  value   Float
+  quality Int      @default(0) @db.SmallInt
+
+  tag Tag @relation(fields: [tagId], references: [id])
+
+  @@id([time, tagId])
+  @@index([tagId, time])
+  @@map("sensor_readings")
+}
+
+model WorkOrder {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  equipmentId      String   @map("equipment_id") @db.Uuid
+  status           String   @default("draft")
+  priority         String   @default("medium")
+  description      String
+  assignedToId     String?  @map("assigned_to") @db.Uuid
+  createdById      String?  @map("created_by") @db.Uuid
+  machineSnapshot  Json?    @map("machine_snapshot")
+  rejectionReason  String?  @map("rejection_reason")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  equipment  Equipment  @relation(fields: [equipmentId], references: [id])
+  assignedTo User?      @relation("AssignedWorkOrders", fields: [assignedToId], references: [id])
+  createdBy  User?      @relation("CreatedWorkOrders", fields: [createdById], references: [id])
+
+  @@index([tenantId, status])
+  @@index([equipmentId])
+  @@map("work_orders")
+}
+
+model MaintenancePlan {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  equipmentId    String    @map("equipment_id") @db.Uuid
+  planType       String    @map("plan_type")
+  frequencyDays  Int?      @map("frequency_days")
+  status         String    @default("draft")
+  nextDueAt      DateTime? @map("next_due_at") @db.Date
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  equipment Equipment @relation(fields: [equipmentId], references: [id])
+
+  @@index([tenantId])
+  @@map("maintenance_plans")
+}
+
+model AnomalyEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  tagId       String?  @map("tag_id") @db.Uuid
+  equipmentId String?  @map("equipment_id") @db.Uuid
+  detectedAt  DateTime @default(now()) @map("detected_at") @db.Timestamptz(6)
+  score       Float?
+  status      String   @default("not_configured")
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  tag       Tag?       @relation(fields: [tagId], references: [id])
+  equipment Equipment? @relation(fields: [equipmentId], references: [id])
+
+  @@index([tenantId])
+  @@map("anomaly_events")
+}
+
+model AiQueryLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  queryText    String   @map("query_text")
+  responseText String?  @map("response_text")
+  status       String   @default("unavailable")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@map("ai_query_log")
+}
+
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  tenantId  String   @map("tenant_id") @db.Uuid
+  entity    String
+  entityId  String   @map("entity_id")
+  action    String
+  actorId   String?  @map("actor_id") @db.Uuid
+  payload   Json     @default("{}")
+  prevHash  String   @map("prev_hash") @db.VarChar(64)
+  hash      String   @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, entity, entityId])
+  @@map("audit_log")
+}

@@ -1,0 +1,34 @@
+# ==============================================================
+# اجبار LF برای همهٔ فایل‌های متنی — الزامی برای سازگاری صفر-اصطکاک
+# بین توسعهٔ ویندوز (Docker Desktop) و استقرار Production روی لینوکس
+# ==============================================================
+
+* text=auto eol=lf
+
+*.sh text eol=lf
+entrypoint*.sh text eol=lf
+*.sh linguist-language=Shell
+
+*.yml text eol=lf
+*.yaml text eol=lf
+*.env text eol=lf
+*.env.example text eol=lf
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
+
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+package.json text eol=lf
+pnpm-lock.yaml text eol=lf -diff
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary

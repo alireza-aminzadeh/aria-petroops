@@ -1,0 +1,40 @@
+# ==== Node / NestJS ====
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.*.local
+*.tsbuildinfo
+
+# ==== Turborepo ====
+.turbo/
+
+# ==== Frontend (React/Vite) ====
+apps/frontend/node_modules/
+apps/frontend/dist/
+
+# ==== Docker / محیط محلی ====
+docker-compose.override.local.yml
+.docker/data/
+
+# ==== IDE / OS junk ====
+.idea/
+.vscode/*
+!.vscode/extensions.json
+Thumbs.db
+.DS_Store
+
+# ==== تست/کش ====
+coverage/
+.eslintcache
+
+# ==== Secrets — هرگز کامیت نشود ====
+*.pem
+*.key
+infra/certbot/conf/**
+!infra/certbot/conf/.gitkeep
+infra/certbot/www/**
+!infra/certbot/www/.gitkeep
+infra/certbot/work/
+infra/certbot/logs/
