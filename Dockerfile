@@ -71,12 +71,10 @@ COPY --from=build /app/apps/api/package.json ./package.json
 COPY --from=build /app/package.json ./package.json
 COPY infra/docker/api-prod.sh /api-prod.sh
 
-RUN addgroup -g 1000 appgroup \
-    && adduser -D -u 1000 -G appgroup appuser \
-    && chmod +x /api-prod.sh \
-    && chown -R appuser:appgroup /app
+# node:alpine already has uid 1000 (`node`); do not create a duplicate user.
+RUN chmod +x /api-prod.sh && chown -R node:node /app /api-prod.sh
 
-USER appuser
+USER node
 
 EXPOSE 3000
 
