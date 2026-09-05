@@ -48,7 +48,10 @@ services:
     env_file: .env
     environment:
       ARIA_RUNTIME: production
+      CI: "true"
     user: "1000:1000"
+    volumes:
+      - ./infra/docker/api-prod.sh:/api-prod.sh:ro
     depends_on:
       postgres:
         condition: service_healthy
