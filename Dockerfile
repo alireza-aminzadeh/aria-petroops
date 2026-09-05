@@ -41,7 +41,6 @@ RUN pnpm --filter @aria/contracts build
 RUN pnpm --filter @aria/api exec prisma generate
 RUN pnpm --filter @aria/api build
 RUN pnpm --filter @aria/frontend build
-RUN pnpm prune --prod
 
 # ---------------------------------------------------------------------
 # Stage 4: ایمیج نهایی Runtime — کاربر non-root
