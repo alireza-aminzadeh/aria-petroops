@@ -52,6 +52,10 @@ services:
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       INDUSTRIAL_INGESTION_ENABLED: ${INDUSTRIAL_INGESTION_ENABLED:-true}
       AI_GATEWAY_ENABLED: ${AI_GATEWAY_ENABLED:-true}
+      SAFEOPS_ENABLED: ${SAFEOPS_ENABLED:-false}
+      SAFEOPS_API_URL: ${SAFEOPS_API_URL:-https://hse.aria-ai.ir}
+      SAFEOPS_API_KEY: ${SAFEOPS_API_KEY:-}
+      SAFEOPS_TIMEOUT_MS: ${SAFEOPS_TIMEOUT_MS:-8000}
     user: "1000:1000"
     volumes:
       - ./infra/docker/api-prod.sh:/api-prod.sh:ro

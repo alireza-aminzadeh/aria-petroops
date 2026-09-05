@@ -22,7 +22,11 @@ export class SafeopsIntegrationService {
   ) {}
 
   isEnabled() {
-    return this.config.get('SAFEOPS_ENABLED') === 'true';
+    return (
+      this.config.get('SAFEOPS_ENABLED') === 'true' &&
+      Boolean(this.config.get('SAFEOPS_API_KEY')) &&
+      Boolean(this.config.get('SAFEOPS_API_URL'))
+    );
   }
 
   async enqueueAnomaly(tenantId: string, payload: SafeopsAnomalyPayload) {
@@ -30,7 +34,7 @@ export class SafeopsIntegrationService {
       data: {
         tenantId,
         target: 'safeops',
-        eventType: 'anomaly.open',
+        eventType: payload.status === 'open' ? 'anomaly.open' : 'anomaly.closed',
         payload,
         status: this.isEnabled() ? 'pending' : 'skipped',
         lastError: this.isEnabled() ? null : 'SAFEOPS_ENABLED=false',
@@ -48,6 +52,10 @@ export class SafeopsIntegrationService {
     if (!url) {
       return;
     }
+    await this.prisma.integrationDelivery.updateMany({
+      where: { target: 'safeops', status: 'skipped', lastError: 'SAFEOPS_ENABLED=false' },
+      data: { status: 'pending', lastError: null },
+    });
     const pending = await this.prisma.integrationDelivery.findMany({
       where: { target: 'safeops', status: 'pending' },
       orderBy: { createdAt: 'asc' },

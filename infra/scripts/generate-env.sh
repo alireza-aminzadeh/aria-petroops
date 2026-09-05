@@ -30,6 +30,7 @@ OPCUA_ENDPOINT_URL=
 SAFEOPS_ENABLED=false
 SAFEOPS_API_URL=https://hse.aria-ai.ir
 SAFEOPS_API_KEY=
+SAFEOPS_TIMEOUT_MS=8000
 WS_CORS_ORIGIN=https://petro.aria-ai.ir
 EOF
 chmod 600 /root/aria-petroops.env

@@ -51,12 +51,13 @@ export class AnomalyDetectionService {
         values: readings.reverse().map((row) => row.value),
       });
     }
+    const tenantId = equipment.unit.site.tenantId;
     const result = scoreEquipmentSeries(series);
     if (!result?.isAnomaly) {
+      await this.releaseIfClear(tenantId, equipment);
       return;
     }
 
-    const tenantId = equipment.unit.site.tenantId;
     const recent = await this.prisma.anomalyEvent.findFirst({
       where: {
         equipmentId: equipment.id,
@@ -66,14 +67,25 @@ export class AnomalyDetectionService {
       orderBy: { detectedAt: 'desc' },
     });
     if (recent) {
+      const summary = this.summary(equipment.tagNumber, result.score, result.contributors[0]?.tagName);
       await this.prisma.anomalyEvent.update({
         where: { id: recent.id },
         data: {
           score: result.score,
           contributors: result.contributors,
-          summary: this.summary(equipment.tagNumber, result.score, result.contributors[0]?.tagName),
+          summary,
         },
       });
+      if (!recent.notifiedSafeopsAt) {
+        await this.safeops.enqueueAnomaly(tenantId, {
+          equipmentTag: equipment.tagNumber,
+          eventId: recent.id,
+          score: result.score,
+          detectedAt: recent.detectedAt.toISOString(),
+          summary,
+          status: 'open',
+        });
+      }
       return;
     }
 
@@ -101,6 +113,32 @@ export class AnomalyDetectionService {
       status: created.status,
     });
     this.logger.log(`open anomaly ${equipment.tagNumber} score=${result.score.toFixed(3)}`);
+  }
+
+  private async releaseIfClear(
+    tenantId: string,
+    equipment: Prisma.EquipmentGetPayload<{
+      include: { tags: true; unit: { include: { site: true } } };
+    }>,
+  ) {
+    const open = await this.prisma.anomalyEvent.findMany({
+      where: { equipmentId: equipment.id, status: { in: ['open', 'acknowledged'] } },
+    });
+    for (const event of open) {
+      await this.prisma.anomalyEvent.update({
+        where: { id: event.id },
+        data: { status: 'closed' },
+      });
+      await this.safeops.enqueueAnomaly(tenantId, {
+        equipmentTag: equipment.tagNumber,
+        eventId: event.id,
+        score: event.score ?? 0,
+        detectedAt: new Date().toISOString(),
+        summary: `آنومالی ${equipment.tagNumber} برطرف شد.`,
+        status: 'closed',
+      });
+      this.logger.log(`closed anomaly ${equipment.tagNumber}`);
+    }
   }
 
   private summary(tagNumber: string, score: number, topTag?: string) {
