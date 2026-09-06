@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
+import { useDateFormat } from '../lib/date';
 
 type Kpis = {
   averagePer10Min: number;
@@ -25,6 +26,7 @@ export function AlarmsPage() {
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [items, setItems] = useState<Alarm[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const { dateTime } = useDateFormat();
 
   useEffect(() => {
     Promise.all([api<Kpis>('/alarms/kpis?hours=8'), api<Alarm[]>('/alarms')])
@@ -64,6 +66,7 @@ export function AlarmsPage() {
               <th className="text-right p-3">اولویت</th>
               <th className="text-right p-3">وضعیت</th>
               <th className="text-right p-3">پیام</th>
+              <th className="text-right p-3">شروع</th>
             </tr>
           </thead>
           <tbody>
@@ -74,6 +77,7 @@ export function AlarmsPage() {
                 <td className="p-3">{item.priority}</td>
                 <td className="p-3">{item.state}</td>
                 <td className="p-3 text-muted">{item.message}</td>
+                <td className="p-3 text-xs text-muted whitespace-nowrap">{dateTime(item.startedAt)}</td>
               </tr>
             ))}
           </tbody>

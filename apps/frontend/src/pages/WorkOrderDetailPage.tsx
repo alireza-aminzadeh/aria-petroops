@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { priorityLabel, statusLabel } from '../lib/labels';
+import { useDateFormat } from '../lib/date';
 
 type Detail = {
   id: string;
@@ -40,6 +41,7 @@ export function WorkOrderDetailPage() {
   const [users, setUsers] = useState<UserOption[]>([]);
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [technicianId, setTechnicianId] = useState('');
+  const { dateTime } = useDateFormat();
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -142,7 +144,7 @@ export function WorkOrderDetailPage() {
               <div>
                 <p>{eventLabel[row.action] ?? row.action}</p>
                 <p className="text-muted text-xs mt-1">
-                  {row.actor?.fullName ?? 'سامانه'} · {new Date(row.createdAt).toLocaleString('fa-IR')}
+                  {row.actor?.fullName ?? 'سامانه'} · {dateTime(row.createdAt)}
                 </p>
               </div>
               <code className="text-[10px] text-muted font-mono self-center">

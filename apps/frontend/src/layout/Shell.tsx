@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api, clearToken, getUser, setUser, SessionUser } from '../lib/api';
+import { useLocale } from '../lib/locale';
 
 const links = [
   { to: '/', label: 'داشبورد تله‌متری' },
@@ -15,6 +16,7 @@ const links = [
 export function Shell() {
   const navigate = useNavigate();
   const [user, setUserState] = useState<SessionUser | null>(getUser());
+  const { locale, setLocale } = useLocale();
 
   useEffect(() => {
     api<SessionUser>('/auth/me')
@@ -61,6 +63,23 @@ export function Shell() {
               <span className="block font-mono text-brass/80">{user.username}</span>
             </p>
           ) : null}
+          {/* نمایش تاریخ/عدد: شمسی (date-fns-jalali) یا میلادی — متن رابط کاربری همچنان فارسی می‌ماند */}
+          <div className="flex items-center gap-1 mb-3 text-xs" role="group" aria-label="فرمت نمایش تاریخ">
+            <button
+              className={`rounded-lg px-2 py-1 ${locale === 'fa' ? 'bg-brass text-ink font-medium' : 'text-muted hover:text-paper'}`}
+              onClick={() => setLocale('fa')}
+              aria-pressed={locale === 'fa'}
+            >
+              تاریخ شمسی
+            </button>
+            <button
+              className={`rounded-lg px-2 py-1 ${locale === 'en' ? 'bg-brass text-ink font-medium' : 'text-muted hover:text-paper'}`}
+              onClick={() => setLocale('en')}
+              aria-pressed={locale === 'en'}
+            >
+              Gregorian
+            </button>
+          </div>
           <button
             className="text-sm text-muted hover:text-rust"
             onClick={() => {

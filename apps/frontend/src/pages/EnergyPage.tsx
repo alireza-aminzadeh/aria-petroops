@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
+import { useDateFormat } from '../lib/date';
 
 type Dashboard = {
   hours: number;
@@ -19,6 +20,7 @@ type Dashboard = {
 export function EnergyPage() {
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { number } = useDateFormat();
 
   useEffect(() => {
     api<Dashboard>('/energy/dashboard?hours=24')
@@ -40,7 +42,7 @@ export function EnergyPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div className="rounded-2xl border border-line bg-panel p-4">
               <p className="text-xs text-muted">CO2e تخمینی</p>
-              <p className="text-2xl font-semibold mt-1">{Math.round(data.summary.co2eKg).toLocaleString('fa-IR')} kg</p>
+              <p className="text-2xl font-semibold mt-1">{number(Math.round(data.summary.co2eKg))} kg</p>
             </div>
             <div className="rounded-2xl border border-line bg-panel p-4">
               <p className="text-xs text-muted">نسبت فلر به گاز</p>
@@ -69,7 +71,7 @@ export function EnergyPage() {
                     <td className="p-3 font-mono">
                       {meter.latest.toFixed(1)} {meter.unitOfMeasure}
                     </td>
-                    <td className="p-3">{Math.round(meter.co2eKg).toLocaleString('fa-IR')}</td>
+                    <td className="p-3">{number(Math.round(meter.co2eKg))}</td>
                   </tr>
                 ))}
               </tbody>
