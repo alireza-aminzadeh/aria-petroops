@@ -16,6 +16,7 @@
 | AI | Isolation Forest + RUL مهندسی (ISO 10816) + دانش محلی؛ LSTM-AE مرکزی با `AI_GATEWAY_URL` |
 | انرژی / آلارم | تراز انرژی، فلر، کربن پیش‌فرض؛ KPI آلارم ISA-18.2 |
 | SafeOps | Outbox به `POST /api/integrations/petroops/anomalies` |
+| چندمستأجری | فیلتر `tenantId` در کد + RLS پایگاه‌داده (لایهٔ دوم، اختیاری با `APP_DB_PASSWORD`) — جزئیات در [`docs/07-security.md#۷۹`](docs/07-security.md#۷۹-سخت‌سازی-چندمستأجری-rls-در-سطح-پایگاهداده) |
 | استقرار Production | فعال روی `91.107.149.251` با CI/CD و HTTPS |
 
 ## اجرای محلی

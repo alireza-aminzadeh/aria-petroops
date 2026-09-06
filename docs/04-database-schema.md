@@ -79,8 +79,11 @@ GROUP BY tag_id, bucket;
 | equipment_id | uuid FK | |
 | plan_type | varchar | `PM` (زمان‌بندی‌شده) / `CBM` (بر اساس وضعیت) |
 | frequency_days | integer nullable | |
-| status | varchar | `draft` / `submitted` / `approved` / `rejected` |
+| status | varchar | `draft` / `submitted` / `approved` / `rejected` — زمان‌بندی این را تغییر نمی‌دهد |
 | next_due_at | date | |
+| estimated_hours | double nullable | ورودی موتور heuristic زمان‌بندی (نت/TAR) |
+| assigned_to_id | uuid FK → users nullable | خروجی زمان‌بندی؛ فقط کاربران با نقش `TECHNICIAN` |
+| scheduled_start / scheduled_end | timestamptz nullable | خروجی زمان‌بندی؛ با `POST /maintenance-plans/schedule` پر می‌شود |
 
 ### `anomaly_events`
 | ستون | نوع | توضیح |
