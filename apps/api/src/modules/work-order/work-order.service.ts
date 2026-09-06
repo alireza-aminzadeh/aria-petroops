@@ -5,18 +5,32 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { subject } from '@casl/ability';
 import { WorkOrderEventDto } from '@aria/contracts';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../prisma/audit.service';
 import { AuthUser } from '../auth/auth-user';
 import { hydrateWorkOrder, availableEvents } from './work-order.runtime';
 import { WorkOrderEvent } from './work-order.machine';
+import { AppAction, CaslAbilityFactory } from '../../common/casl/casl-ability.factory';
+
+/** نگاشت رویداد ماشین‌حالت (XState، UPPERCASE) به action معادل CASL (lowercase). */
+const WORK_ORDER_EVENT_TO_ACTION: Record<WorkOrderEvent['type'], AppAction> = {
+  ASSIGN: 'assign',
+  START: 'start',
+  SUBMIT_FOR_APPROVAL: 'submit',
+  APPROVE: 'approve',
+  REJECT: 'reject',
+  CLOSE: 'close',
+  CANCEL: 'cancel',
+};
 
 @Injectable()
 export class WorkOrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly casl: CaslAbilityFactory,
   ) {}
 
   list(user: AuthUser, status?: string, equipmentId?: string) {
@@ -105,7 +119,7 @@ export class WorkOrderService {
       throw new NotFoundException('دستور کار یافت نشد.');
     }
 
-    this.assertCanSend(user, dto.type);
+    this.assertCanSend(user, dto.type, record);
 
     const event = dto as WorkOrderEvent;
     const actor = hydrateWorkOrder(record.id, record.machineSnapshot);
@@ -168,29 +182,23 @@ export class WorkOrderService {
     });
   }
 
-  private assertCanSend(user: AuthUser, type: WorkOrderEvent['type']) {
-    if (user.roles.includes('ADMIN')) {
-      return;
+  /**
+   * ABAC واقعی با CASL: به‌جای بررسی صرف نقش (RBAC)، ability را روی *همان
+   * instance* دستورکار (subject) می‌سنجد تا شرط‌های مالکیت/تخصیص هم واقعاً
+   * اعمال شوند — مثلاً یک تکنسین فقط روی دستورکاری که به خودش تخصیص داده
+   * شده START/SUBMIT_FOR_APPROVAL بزند، نه هر دستورکاری در تننت.
+   * subject('WorkOrder', record) لازم است چون Prisma یک plain object
+   * برمی‌گرداند و CASL بدون تگ صریح نمی‌داند این کدام subject type است.
+   */
+  private assertCanSend(
+    user: AuthUser,
+    type: WorkOrderEvent['type'],
+    record: { tenantId: string; assignedToId: string | null },
+  ) {
+    const ability = this.casl.createForUser(user);
+    const action = WORK_ORDER_EVENT_TO_ACTION[type];
+    if (!ability.can(action, subject('WorkOrder', record))) {
+      throw new ForbiddenException('برای این گذار مجاز نیستید.');
     }
-    const planner =
-      user.roles.includes('PLANNER') ||
-      user.roles.includes('RELIABILITY_ENGINEER');
-    const plannerEvents: WorkOrderEvent['type'][] = [
-      'ASSIGN',
-      'APPROVE',
-      'CLOSE',
-      'CANCEL',
-    ];
-    const technicianEvents: WorkOrderEvent['type'][] = [
-      'START',
-      'SUBMIT_FOR_APPROVAL',
-    ];
-    if (plannerEvents.includes(type) && planner) {
-      return;
-    }
-    if (technicianEvents.includes(type) && user.roles.includes('TECHNICIAN')) {
-      return;
-    }
-    throw new ForbiddenException('برای این گذار مجاز نیستید.');
   }
 }
