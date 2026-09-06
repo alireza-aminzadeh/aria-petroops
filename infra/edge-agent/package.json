@@ -8,6 +8,7 @@
     "start": "node src/index.mjs"
   },
   "dependencies": {
-    "mqtt": "^5.14.1"
+    "mqtt": "^5.14.1",
+    "node-opcua-client": "2.178.0"
   }
 }

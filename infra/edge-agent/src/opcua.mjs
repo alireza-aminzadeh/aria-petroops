@@ -1,6 +1,12 @@
 /**
  * Read-only OPC-UA client. Never writes to the server/session.
- * node-opcua is optional: npm install node-opcua in this folder to enable.
+ *
+ * Uses `node-opcua-client` (the lightweight client-only sub-package, not the
+ * full `node-opcua` meta-package which also bundles server code) — this
+ * container only ever subscribes/reads, and keeps the image smaller/faster
+ * to start, which matters given the 96M memory limit on this service in
+ * docker-compose.yml. It's a real `dependencies` entry now (see package.json)
+ * so this path actually works in production, not just the simulator.
  */
 export async function startOpcua(publish) {
   const endpoint = process.env.OPCUA_ENDPOINT_URL;
@@ -10,9 +16,9 @@ export async function startOpcua(publish) {
 
   let opcua;
   try {
-    opcua = await import('node-opcua');
+    opcua = await import('node-opcua-client');
   } catch {
-    console.warn('OPC-UA requested but node-opcua is not installed; staying on simulator');
+    console.warn('OPC-UA requested but node-opcua-client is not installed; staying on simulator');
     return { mode: 'missing-library' };
   }
 
@@ -25,9 +31,40 @@ export async function startOpcua(publish) {
 
   const client = opcua.OPCUAClient.create({
     endpointMustExist: false,
-    connectionStrategy: { maxRetry: 20, initialDelay: 2000 },
+    // maxRetry کوچک نگه داشته شده تا اگر سرور OPC-UA در لحظهٔ استارت edge agent
+    // در دسترس نباشد، طولانی (چند دقیقه با backoff داخلی node-opcua) بلاک
+    // نشویم؛ بعد از reconnect موفق، همین connectionStrategy برای افت‌های بعدی
+    // (connection_lost) هم به کار می‌رود که برای آن مقادیر کوچک کافی است چون
+    // node-opcua خودش پشت‌سرهم تلاش می‌کند.
+    connectionStrategy: { maxRetry: 5, initialDelay: 1000, maxDelay: 5000 },
+    // این کلاینت فقط پشت شبکهٔ OT ایزوله (طبق docs/07-security.md) و فقط برای
+    // subscribe/read استفاده می‌شود؛ None ساده‌ترین/سبک‌ترین حالت است و از
+    // پیچیدگی/شکست تولید و مدیریت گواهی (PKI) داخل کانتینر non-root جلوگیری
+    // می‌کند. اگر سرور OPC-UA هدف امنیت پیام را الزامی کند، این مقادیر باید
+    // به‌همراه یک PKI volume نوشتنی به‌روزرسانی شوند.
+    securityMode: opcua.MessageSecurityMode.None,
+    securityPolicy: opcua.SecurityPolicy.None,
   });
-  await client.connect(endpoint);
+
+  // اگر سرور OPC-UA واقعی در دسترس نباشد (پیکربندی اشتباه، شبکه قطع، سرور
+  // پایین)، نباید کل edge agent کرش کند یا استارت را طولانی بلاک کند — باید
+  // در یک بازهٔ محدود به شبیه‌ساز برگردد، دقیقاً مثل حالت «کتابخانه نصب نیست».
+  // سقف زمانی صریح (علاوه‌بر connectionStrategy) چون منطق backoff داخلی
+  // کتابخانه ممکن است در عمل بیشتر از انتظار طول بکشد.
+  const CONNECT_TIMEOUT_MS = 20_000;
+  try {
+    await Promise.race([
+      client.connect(endpoint),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`connect timed out after ${CONNECT_TIMEOUT_MS}ms`)), CONNECT_TIMEOUT_MS),
+      ),
+    ]);
+  } catch (error) {
+    console.warn(`OPC-UA connect failed (${error.message}); staying on simulator`);
+    await client.disconnect().catch(() => {});
+    return { mode: 'connect-failed' };
+  }
+
   const session = await client.createSession();
   const subscription = await session.createSubscription2({
     requestedPublishingInterval: 1000,
@@ -58,6 +95,9 @@ export async function startOpcua(publish) {
       });
     });
   }
+
+  client.on('connection_lost', () => console.warn('OPC-UA connection lost; node-opcua will auto-retry'));
+  client.on('connection_reestablished', () => console.log('OPC-UA connection re-established'));
 
   console.log(`OPC-UA subscribed read-only at ${endpoint} (${nodeIds.length} nodes)`);
   return { mode: 'opcua', client, session };
