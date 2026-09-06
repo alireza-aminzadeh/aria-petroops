@@ -40,4 +40,19 @@ export class MaintenanceController {
   ) {
     return this.service.transition(user, id, body.status);
   }
+
+  /**
+   * موتور heuristic زمان‌بندی نت/TAR: برنامه‌های تأییدشدهٔ دارای estimatedHours
+   * را بین تکنسین‌ها (یا فهرست technicianIds مشخص‌شده) توزیع می‌کند.
+   */
+  @Post('schedule')
+  @Roles('ADMIN', 'PLANNER', 'RELIABILITY_ENGINEER')
+  @CheckPolicies((ability) => ability.can('approve', 'MaintenancePlan'))
+  schedule(
+    @CurrentUser() user: AuthUser,
+    @Body()
+    body: { horizonStart?: string; technicianIds?: string[]; workingHoursPerDay?: number },
+  ) {
+    return this.service.schedule(user, body);
+  }
 }

@@ -33,6 +33,8 @@ export const createMaintenancePlanSchema = z.object({
   planType: z.enum(['PM', 'CBM']),
   frequencyDays: z.number().int().positive().nullable().optional(),
   nextDueAt: z.string().date().optional(),
+  /** برآورد مدت اجرای کار (ساعت) — ورودی موتور زمان‌بندی heuristic (بخش نت/TAR). */
+  estimatedHours: z.number().positive().max(500).nullable().optional(),
 });
 
 export type CreateWorkOrderDto = z.infer<typeof createWorkOrderSchema>;
