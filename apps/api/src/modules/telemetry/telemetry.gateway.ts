@@ -37,6 +37,10 @@ export class TelemetryGateway
       const payload = this.jwt.verify<{ sub: string; tenantId: string }>(token);
       client.data.userId = payload.sub;
       client.data.tenantId = payload.tenantId;
+      // بدون این room، this.server.emit سراسری بود یعنی داده‌های زنده (تگ‌ها و
+      // آنومالی) هر تننت برای کاربران احراز‌هویت‌شدهٔ تننت‌های دیگر هم قابل
+      // دیدن بود؛ join کردن به room تننتی، broadcast های زیر را به همان تننت محدود می‌کند.
+      void client.join(TelemetryGateway.tenantRoom(payload.tenantId));
     } catch {
       client.disconnect(true);
     }
@@ -47,13 +51,35 @@ export class TelemetryGateway
   }
 
   broadcastTagUpdate(
+    tenantId: string,
     tagId: string,
     value: number,
     timestamp: Date,
     tagName?: string,
   ) {
     const payload = { tagId, tagName, value, timestamp };
-    this.server?.emit(`tag:${tagId}`, payload);
-    this.server?.emit('tag:update', payload);
+    const room = this.server?.to(TelemetryGateway.tenantRoom(tenantId));
+    room?.emit(`tag:${tagId}`, payload);
+    room?.emit('tag:update', payload);
+  }
+
+  /** رویداد باز/به‌روزرسانی/بسته‌شدن آنومالی (Isolation Forest) را فقط به کاربران همان تننت پخش می‌کند. */
+  broadcastAnomalyEvent(
+    tenantId: string,
+    event: {
+      id: string;
+      equipmentId: string | null;
+      equipmentTag?: string | null;
+      status: string;
+      score: number | null;
+      summary: string | null;
+      detectedAt: Date;
+    },
+  ) {
+    this.server?.to(TelemetryGateway.tenantRoom(tenantId)).emit('anomaly:update', event);
+  }
+
+  private static tenantRoom(tenantId: string): string {
+    return `tenant:${tenantId}`;
   }
 }

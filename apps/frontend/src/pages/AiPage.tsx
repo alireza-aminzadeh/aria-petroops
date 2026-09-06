@@ -1,5 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { api, hasRole } from '../lib/api';
+import { connectTelemetry, AnomalyUpdate } from '../lib/ws';
+import { useDateFormat } from '../lib/date';
 
 type AiStatus = { enabled: boolean; available: boolean; message: string; method?: string };
 type AnomalyEvent = {
@@ -23,6 +25,7 @@ export function AiPage() {
   const [knowledgeMessage, setKnowledgeMessage] = useState('');
   const [citations, setCitations] = useState<string[]>([]);
   const canAct = hasRole('ADMIN', 'PLANNER', 'RELIABILITY_ENGINEER');
+  const { relative } = useDateFormat();
 
   async function load() {
     const [st, list] = await Promise.all([
@@ -41,6 +44,42 @@ export function AiPage() {
         message: 'سرویس AI در دسترس نیست.',
       });
     });
+  }, []);
+
+  // بدون رفرش دستی: باز/به‌روزرسانی/بسته‌شدن آنومالی از AnomalyDetectionService
+  // (هر ۲۰ ثانیه) یا acknowledge یک اپراتور دیگر، زنده روی همین صفحه دیده می‌شود.
+  useEffect(() => {
+    const socket = connectTelemetry(
+      () => {},
+      (update: AnomalyUpdate) => {
+        setEvents((prev) => {
+          const idx = prev.findIndex((item) => item.id === update.id);
+          if (idx === -1) {
+            // رویداد تازه: در ابتدای لیست اضافه می‌شود (مثل ترتیب detectedAt desc از REST).
+            return [
+              {
+                id: update.id,
+                score: update.score,
+                status: update.status,
+                summary: update.summary,
+                method: 'isolation_forest',
+                detectedAt: update.detectedAt,
+                equipment: update.equipmentTag
+                  ? { tagNumber: update.equipmentTag, name: update.equipmentTag }
+                  : undefined,
+              },
+              ...prev,
+            ];
+          }
+          const next = [...prev];
+          next[idx] = { ...next[idx], status: update.status, score: update.score, summary: update.summary };
+          return next;
+        });
+      },
+    );
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   async function submit(
@@ -92,7 +131,9 @@ export function AiPage() {
               <div>
                 <p className="font-medium">{item.equipment?.tagNumber ?? 'تجهیز'} — {item.status}</p>
                 <p className="text-sm text-muted mt-1">{item.summary}</p>
-                <p className="text-xs text-brass mt-1">امتیاز {item.score?.toFixed(2) ?? '—'}</p>
+                <p className="text-xs text-brass mt-1">
+                  امتیاز {item.score?.toFixed(2) ?? '—'} · {relative(item.detectedAt)}
+                </p>
               </div>
               {canAct && item.status === 'open' ? (
                 <div className="flex gap-2">

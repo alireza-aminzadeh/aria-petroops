@@ -42,10 +42,11 @@ export class TelemetryIngestService {
       },
     });
 
-    this.gateway.broadcastTagUpdate(tag.id, input.value, input.time, tag.tagName);
+    const tenantId = tag.equipment.unit.site.tenantId;
+    this.gateway.broadcastTagUpdate(tenantId, tag.id, input.value, input.time, tag.tagName);
 
     await this.alarms.observeReading({
-      tenantId: tag.equipment.unit.site.tenantId,
+      tenantId,
       tag,
       value: input.value,
       time: input.time,

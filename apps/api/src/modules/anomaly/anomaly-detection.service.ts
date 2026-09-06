@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { scoreEquipmentSeries } from '../ai-gateway/ml/score-equipment';
 import { SafeopsIntegrationService } from '../integration/safeops-integration.service';
+import { TelemetryGateway } from '../telemetry/telemetry.gateway';
 
 @Injectable()
 export class AnomalyDetectionService {
@@ -12,6 +13,7 @@ export class AnomalyDetectionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly safeops: SafeopsIntegrationService,
+    private readonly telemetry: TelemetryGateway,
   ) {}
 
   @Cron('*/20 * * * * *')
@@ -86,6 +88,15 @@ export class AnomalyDetectionService {
           status: 'open',
         });
       }
+      this.telemetry.broadcastAnomalyEvent(tenantId, {
+        id: recent.id,
+        equipmentId: equipment.id,
+        equipmentTag: equipment.tagNumber,
+        status: recent.status,
+        score: result.score,
+        summary,
+        detectedAt: recent.detectedAt,
+      });
       return;
     }
 
@@ -112,6 +123,15 @@ export class AnomalyDetectionService {
       summary: created.summary,
       status: created.status,
     });
+    this.telemetry.broadcastAnomalyEvent(tenantId, {
+      id: created.id,
+      equipmentId: equipment.id,
+      equipmentTag: equipment.tagNumber,
+      status: created.status,
+      score: created.score,
+      summary: created.summary,
+      detectedAt: created.detectedAt,
+    });
     this.logger.log(`open anomaly ${equipment.tagNumber} score=${result.score.toFixed(3)}`);
   }
 
@@ -125,6 +145,7 @@ export class AnomalyDetectionService {
       where: { equipmentId: equipment.id, status: { in: ['open', 'acknowledged'] } },
     });
     for (const event of open) {
+      const closedSummary = `آنومالی ${equipment.tagNumber} برطرف شد.`;
       await this.prisma.anomalyEvent.update({
         where: { id: event.id },
         data: { status: 'closed' },
@@ -134,8 +155,17 @@ export class AnomalyDetectionService {
         eventId: event.id,
         score: event.score ?? 0,
         detectedAt: new Date().toISOString(),
-        summary: `آنومالی ${equipment.tagNumber} برطرف شد.`,
+        summary: closedSummary,
         status: 'closed',
+      });
+      this.telemetry.broadcastAnomalyEvent(tenantId, {
+        id: event.id,
+        equipmentId: equipment.id,
+        equipmentTag: equipment.tagNumber,
+        status: 'closed',
+        score: event.score,
+        summary: closedSummary,
+        detectedAt: new Date(),
       });
       this.logger.log(`closed anomaly ${equipment.tagNumber}`);
     }

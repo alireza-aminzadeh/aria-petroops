@@ -18,6 +18,7 @@ import { AuthUser } from '../auth/auth-user';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiGatewayPort } from './ai-gateway.port';
 import { WorkOrderService } from '../work-order/work-order.service';
+import { TelemetryGateway } from '../telemetry/telemetry.gateway';
 
 @Controller()
 @UseGuards(JwtAuthGuard)
@@ -26,6 +27,7 @@ export class AiGatewayController {
     @Inject('AiGatewayPort') private readonly gateway: AiGatewayPort,
     private readonly prisma: PrismaService,
     private readonly workOrders: WorkOrderService,
+    private readonly telemetry: TelemetryGateway,
   ) {}
 
   @Get('ai/status')
@@ -66,10 +68,23 @@ export class AiGatewayController {
     if (!event) {
       return { statusCode: 404, message: 'رویداد یافت نشد.' };
     }
-    return this.prisma.anomalyEvent.update({
+    const updated = await this.prisma.anomalyEvent.update({
       where: { id },
       data: { status: 'acknowledged', acknowledgedAt: new Date() },
+      include: { equipment: { select: { id: true, tagNumber: true } } },
     });
+    // اگر یک اپراتور دیگر همین لحظه همین داشبورد را باز داشته باشد، وضعیت
+    // «تأیید دیده‌شدن» را بدون رفرش دستی ببیند.
+    this.telemetry.broadcastAnomalyEvent(user.tenantId, {
+      id: updated.id,
+      equipmentId: updated.equipmentId,
+      equipmentTag: updated.equipment?.tagNumber,
+      status: updated.status,
+      score: updated.score,
+      summary: updated.summary,
+      detectedAt: updated.detectedAt,
+    });
+    return updated;
   }
 
   @Post('anomaly-events/:id/work-order')

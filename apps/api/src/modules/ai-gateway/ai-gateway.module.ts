@@ -10,11 +10,12 @@ import { AuthModule } from '../auth/auth.module';
 import { WorkOrderModule } from '../work-order/work-order.module';
 import { AnomalyDetectionService } from '../anomaly/anomaly-detection.service';
 import { IntegrationModule } from '../integration/integration.module';
+import { TelemetryModule } from '../telemetry/telemetry.module';
 
 export const AI_GATEWAY = 'AiGatewayPort';
 
 @Module({
-  imports: [PrismaModule, AuthModule, WorkOrderModule, IntegrationModule],
+  imports: [PrismaModule, AuthModule, WorkOrderModule, IntegrationModule, TelemetryModule],
   controllers: [AiGatewayController],
   providers: [
     StubAiGatewayAdapter,
