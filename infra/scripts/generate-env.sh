@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
 PG=$(openssl rand -hex 24)
+APP_PG=$(openssl rand -hex 24)
 RD=$(openssl rand -hex 24)
 JWT=$(openssl rand -hex 32)
 MQTT=$(openssl rand -hex 24)
@@ -13,6 +14,13 @@ POSTGRES_DB=aria_petroops
 POSTGRES_USER=aria_petroops
 POSTGRES_PASSWORD=${PG}
 DATABASE_URL=postgresql://aria_petroops:${PG}@postgres:5432/aria_petroops?schema=public
+# سخت‌سازی RLS (لایهٔ دوم دفاعی): نقش محدود بدون BYPASSRLS که برنامه با آن به
+# دیتابیس وصل می‌شود؛ provision-app-role.js آن را در هر deploy می‌سازد/همگام
+# می‌کند (بعد از prisma migrate deploy در api-prod.sh). می‌توانید با خالی‌کردن
+# APP_DB_PASSWORD این سخت‌سازی را غیرفعال کنید (fallback به DATABASE_URL).
+APP_DB_ROLE=aria_petroops_app
+APP_DB_PASSWORD=${APP_PG}
+APP_DATABASE_URL=postgresql://aria_petroops_app:${APP_PG}@postgres:5432/aria_petroops?schema=public&connection_limit=5
 REDIS_PASSWORD=${RD}
 REDIS_URL=redis://:${RD}@redis:6379
 JWT_SECRET=${JWT}

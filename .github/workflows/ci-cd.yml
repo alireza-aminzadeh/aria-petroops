@@ -54,6 +54,23 @@ jobs:
       - name: Lint
         run: pnpm --filter @aria/api lint && pnpm --filter @aria/frontend lint
 
+      # اعتبارسنجی این‌که همهٔ migration ها (شامل سخت‌سازی RLS) روی یک دیتابیس
+      # تازه بدون خطا اجرا می‌شوند — قبل از این‌که همین مشکل در production دیده شود.
+      - name: Apply Prisma migrations
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/petroops_test?schema=public"
+        run: pnpm --filter @aria/api exec prisma migrate deploy
+
+      # اعتبارسنجی مسیر سخت‌سازی RLS (نقش محدود بدون BYPASSRLS): همان اسکریپتی
+      # که api-prod.sh بعد از migrate deploy در production صدا می‌زند، اینجا هم
+      # با یک نقش/رمز CI اجرا می‌شود تا رگرسیون در provision-app-role.js زود دیده شود.
+      - name: Provision restricted app DB role (regression check)
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/petroops_test?schema=public"
+          APP_DB_ROLE: aria_petroops_app_ci
+          APP_DB_PASSWORD: ci-test-app-role-password-not-for-production
+        run: node apps/api/prisma/provision-app-role.js
+
       - name: Unit tests
         env:
           DATABASE_URL: "postgresql://test:test@localhost:5432/petroops_test?schema=public"

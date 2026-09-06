@@ -47,6 +47,13 @@ services:
     environment:
       ARIA_RUNTIME: production
       CI: "true"
+      # سخت‌سازی RLS (لایهٔ دوم دفاعی، اختیاری): اگر APP_DB_PASSWORD در .env پر
+      # باشد، api-prod.sh بعد از migrate deploy نقش محدود را می‌سازد/همگام
+      # می‌کند و برنامه با APP_DATABASE_URL (نه DATABASE_URL سوپریوزر) وصل
+      # می‌شود تا پالیسی‌های RLS واقعاً اجرا شوند.
+      APP_DB_ROLE: ${APP_DB_ROLE:-aria_petroops_app}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-}
+      APP_DATABASE_URL: ${APP_DATABASE_URL:-}
       MQTT_BROKER_URL: mqtt://mqtt:1883
       MQTT_USERNAME: ${MQTT_USERNAME:-petroops}
       MQTT_PASSWORD: ${MQTT_PASSWORD}

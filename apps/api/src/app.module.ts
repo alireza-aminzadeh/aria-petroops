@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { CaslModule } from './common/casl/casl.module';
+import { TenantModule } from './common/tenant/tenant.module';
+import { TenantContextInterceptor } from './common/tenant/tenant-context.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
 import { AssetModule } from './modules/asset/asset.module';
 import { WorkOrderModule } from './modules/work-order/work-order.module';
@@ -26,6 +28,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ThrottlerModule.forRoot({
       throttlers: [{ ttl: 60_000, limit: 120 }],
     }),
+    TenantModule,
     PrismaModule,
     CaslModule,
     AuthModule,
@@ -39,6 +42,12 @@ import { ScheduleModule } from '@nestjs/schedule';
     AiGatewayModule,
   ],
   controllers: [HealthController],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Global: tenantId کاربر جاری را برای طول عمر هر درخواست HTTP در
+    // TenantContextService (AsyncLocalStorage) می‌گذارد تا PrismaService
+    // بتواند app.tenant_id را برای RLS پایگاه‌داده ست کند (سخت‌سازی لایهٔ دوم).
+    { provide: APP_INTERCEPTOR, useClass: TenantContextInterceptor },
+  ],
 })
 export class AppModule {}

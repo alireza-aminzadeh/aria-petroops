@@ -20,4 +20,12 @@ if [ -z "$PRISMA_JS" ]; then
 fi
 
 node "$PRISMA_JS" migrate deploy --schema=/app/prisma/schema.prisma
+
+# سخت‌سازی RLS (لایهٔ دوم دفاعی) — اختیاری: فقط اگر APP_DB_PASSWORD در .env ست
+# شده باشد نقش محدود دیتابیس را می‌سازد/همگام می‌کند؛ در غیر این صورت no-op
+# است (رفتار امروز حفظ می‌شود). اگر APP_DB_PASSWORD ست شده و این مرحله خطا
+# بدهد، طبق «set -eu» deploy همینجا متوقف می‌شود تا برنامه هرگز با سخت‌سازی
+# نیمه‌کاره/شکسته بالا نیاید.
+node /app/prisma/provision-app-role.js
+
 exec node dist/main.js
