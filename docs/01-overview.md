@@ -47,4 +47,4 @@
 - آنومالی باز از PetroOps به `POST /api/integrations/petroops/anomalies` فرستاده می‌شود تا مجوز روی همان تگ قابل بلوکه شدن باشد.
 
 ## ۱.۷ ورود
-نام کاربری مشترک هر دو سامانه: `alireza`. رمز لوکال `alireza`؛ رمز Production (یکسان با SafeOps) `Aria7x!Alireza#Ops2026`. جزئیات در [`README.md`](../README.md).
+نام کاربری مشترک هر دو سامانه: `alireza`. رمز لوکال `alireza`. رمز Production در git نیست؛ روی سرور `SEED_ALIREZA_PASSWORD` را ست کنید. جزئیات در [`README.md`](../README.md).

@@ -49,7 +49,7 @@ chown -R deploy:deploy /home/deploy/.ssh
 ## ۷.۵ احراز هویت و مجوزها
 - JWT (`@nestjs/jwt` + Passport) با `JWT_EXPIRES_IN=8h` + Refresh Token با `JWT_REFRESH_EXPIRES_IN=7d`.
 - ورود با **نام کاربری** (ستون `users.username`) یا ایمیل.
-- **کاربر راه‌انداز مشترک با SafeOps:** نام کاربری `alireza`. رمز لوکال `alireza`؛ رمز Production (یکسان در هر دو سامانه) `Aria7x!Alireza#Ops2026`. بازنویسی با `SEED_ALIREZA_PASSWORD`.
+- **کاربر راه‌انداز مشترک با SafeOps:** نام کاربری `alireza`. رمز لوکال `alireza`. رمز Production فقط از طریق `SEED_ALIREZA_PASSWORD` روی سرور (در git ذخیره نشود).
 - RBAC پایه: `RELIABILITY_ENGINEER`, `MAINTENANCE_PLANNER`, `ENERGY_MANAGER`, `ADMIN`.
 - **ABAC واقعی با CASL** (نه فقط RBAC): تا قبل از این نسخه، `CaslAbilityFactory` فقط نقش کاربر را در برابر *نوع* subject می‌سنجید (`can('start', 'WorkOrder')`) — یعنی یک تکنسین می‌توانست دستورکار تخصیص‌داده‌شده به تکنسین دیگر را هم START/SUBMIT کند (فقط نقش چک می‌شد، نه مالکیت). حالا `WorkOrderService.transition()` با `subject('WorkOrder', record)` نمونهٔ واقعی را تگ می‌کند و شرط‌های CASL واقعاً فیلد‌محور هستند:
   - تکنسین: فقط روی WorkOrder ای که `assignedToId` آن برابر `user.id` (و هم‌تننت) باشد می‌تواند START/SUBMIT بزند.

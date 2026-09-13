@@ -87,7 +87,7 @@ nano .env   # پر کردن رمزهای واقعی
 docker compose -f docker-compose.yml run --rm app node ./node_modules/prisma/build/index.js migrate deploy
 
 docker compose -f docker-compose.yml up -d
-# ورود Production: نام کاربری alireza / رمز Aria7x!Alireza#Ops2026
+# ورود Production: نام کاربری alireza / رمز از SEED_ALIREZA_PASSWORD در .env سرور
 docker compose ps
 docker compose logs -f app
 ```

@@ -7,7 +7,7 @@
 - احراز هویت: `Authorization: Bearer <JWT>` (Passport.js + `@nestjs/passport` + `@nestjs/jwt`).
 - ورود: `POST /api/auth/login` با `{ "username": "alireza", "password": "..." }` (ایمیل هم به‌عنوان شناسه پذیرفته می‌شود).
   - لوکال: `alireza` / `alireza`
-  - Production: `alireza` / `Aria7x!Alireza#Ops2026`
+  - Production: رمز بذر را با `SEED_ALIREZA_PASSWORD` روی سرور بگذارید (در git نیست).
 - اعتبارسنجی ورودی: `class-validator` + `class-transformer` روی DTO ها (یا Zod از طریق `packages/contracts` مشترک با فرانت).
 - خطاها: فرمت یکنواخت JSON (`{ statusCode, message, error, timestamp }`) از طریق یک `AllExceptionsFilter` سراسری.
 
