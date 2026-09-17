@@ -2,14 +2,16 @@
 
 Asset, process, and energy intelligence for oil, gas, and petrochemical operations — predictive maintenance, process anomaly, energy, and maintenance/TAR.
 
+**This repository is a public demo**, not a live plant deployment. Visit **[https://aria-ai.ir](https://aria-ai.ir)** to view the demos and work with them.
+
 **Project period:** Data collection, process analysis, and implementation of this project were carried out in **2024, 2025, and 2026**.
 
 **Language:** [English](#english) · [فارسی](#persian)
 
-**Live:** [https://petro.aria-ai.ir](https://petro.aria-ai.ir) · **API docs:** [https://petro.aria-ai.ir/api/docs](https://petro.aria-ai.ir/api/docs) · **Health:** [https://petro.aria-ai.ir/health](https://petro.aria-ai.ir/health)
+**Demo entry:** [https://aria-ai.ir](https://aria-ai.ir) · **This demo:** [https://petro.aria-ai.ir](https://petro.aria-ai.ir) · **API docs:** [https://petro.aria-ai.ir/api/docs](https://petro.aria-ai.ir/api/docs) · **Health:** [https://petro.aria-ai.ir/health](https://petro.aria-ai.ir/health)
 
-[![CI/CD](https://github.com/alireza-aminzadeh/aria-petroops/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/alireza-aminzadeh/aria-petroops/actions/workflows/ci-cd.yml)
-[![Production](https://img.shields.io/badge/production-petro.aria--ai.ir-1f6feb)](https://petro.aria-ai.ir)
+[![CI/CD](https://github.com/alireza-aminzadeh/aria-petroops/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/alireza-aminzadeh/aria-petroops/actions/workflows/ci-cd.yml)
+[![Demo](https://img.shields.io/badge/demo-aria--ai.ir-1f6feb)](https://aria-ai.ir)
 
 Sister product: [Aria SafeOps](https://github.com/alireza-aminzadeh/aria-safeops) (`hse.aria-ai.ir`) — electronic PTW / PSM. PetroOps can push open anomalies so SafeOps holds permits on the same `equipment_tag`.
 
@@ -19,7 +21,9 @@ Sister product: [Aria SafeOps](https://github.com/alireza-aminzadeh/aria-safeops
 
 # Aria PetroOps — English
 
-Aria PetroOps is the APM / process / energy product of [Aria AI](https://aria-ai.ir). It is a **Turborepo + pnpm** modular monolith: NestJS 11 (Fastify) + Prisma + XState for work orders; a React 19 SPA with ECharts for live tags. An **outbound-only** Edge Agent publishes MQTT (optional read-only OPC-UA). This API **never writes to DCS/PLC**.
+Aria PetroOps is the APM / process / energy **demo** of [Aria AI](https://aria-ai.ir). It is a **Turborepo + pnpm** modular monolith: NestJS 11 (Fastify) + Prisma + XState for work orders; a React 19 SPA with ECharts for live tags. An **outbound-only** Edge Agent publishes MQTT (optional read-only OPC-UA). This API **never writes to DCS/PLC**.
+
+This repository is a **demo**. Open **[https://aria-ai.ir](https://aria-ai.ir)** to see the demos and work with them. The PetroOps instance itself is at [https://petro.aria-ai.ir](https://petro.aria-ai.ir).
 
 Data collection, analysis of plant processes, and delivery of this system took place across **2024, 2025, and 2026**.
 
@@ -30,8 +34,10 @@ Persian engineering notes: [`docs/`](docs/). English manuals: [`docs/en/`](docs/
 | Item | Value |
 |---|---|
 | Product name | Aria PetroOps («پتروپایش») |
+| Kind | Public demo (not a live plant) |
+| Demo entry | https://aria-ai.ir |
 | Project period | 2024, 2025, and 2026 (data collection, process analysis, implementation) |
-| Public URL | https://petro.aria-ai.ir |
+| Demo URL | https://petro.aria-ai.ir |
 | GitHub | https://github.com/alireza-aminzadeh/aria-petroops |
 | Current delivery | Phase 1 BPMS + Phase 2 live telemetry and on-prem scoring |
 | Backend | Node 22 · NestJS 11 · Fastify 5 · Prisma 6 · XState v5 · CASL |
@@ -199,9 +205,11 @@ Blending/DoE, pipeline leak module, digital twin, Temporal for long TAR. Heurist
 
 سامانهٔ **هوشمندی دارایی، فرآیند و انرژی** برای نفت، گاز و پتروشیمی. محصول APM مجموعهٔ [آریا اِی‌آی](https://aria-ai.ir).
 
+**این مخزن یک دموی عمومی است.** برای مشاهده و کار کردن با این دموها به **[https://aria-ai.ir](https://aria-ai.ir)** مراجعه کنید.
+
 **دورهٔ پروژه:** گردآوری اطلاعات، تحلیل و آنالیز فرآیندها، و اجرای این سامانه در سال‌های **۲۰۲۴، ۲۰۲۵ و ۲۰۲۶** انجام شده است.
 
-**زنده:** [https://petro.aria-ai.ir](https://petro.aria-ai.ir) · **API:** [https://petro.aria-ai.ir/api/docs](https://petro.aria-ai.ir/api/docs)
+**ورود به دموها:** [https://aria-ai.ir](https://aria-ai.ir) · **این دمو:** [https://petro.aria-ai.ir](https://petro.aria-ai.ir) · **API:** [https://petro.aria-ai.ir/api/docs](https://petro.aria-ai.ir/api/docs)
 
 سامانهٔ خواهر: [Aria SafeOps](https://github.com/alireza-aminzadeh/aria-safeops). Edge فقط outbound است؛ این API هرگز به DCS/PLC فرمان نمی‌دهد.
 
@@ -209,6 +217,8 @@ Blending/DoE, pipeline leak module, digital twin, Temporal for long TAR. Heurist
 
 | مورد | مقدار |
 |---|---|
+| نوع | دموی عمومی (نه واحد عملیاتی زنده) |
+| ورود به دموها | https://aria-ai.ir |
 | دورهٔ پروژه | سال‌های ۲۰۲۴، ۲۰۲۵ و ۲۰۲۶ (گردآوری اطلاعات، تحلیل فرآیندها، اجرا) |
 | تحویل فعلی | فاز ۱ BPMS + فاز ۲ تله‌متری زنده و امتیازدهی on-prem |
 | بک‌اند | NestJS 11 · Fastify · Prisma · XState · CASL |

@@ -11,6 +11,8 @@ Workflow: `.github/workflows/ci-cd.yml`.
 | build-and-push | `ghcr.io/alireza-aminzadeh/aria-petroops-app:<sha>` |
 | deploy | SSH, `IMAGE_TAG`, compose pull/up |
 
+Triggers: `push` / `pull_request` to `main`, plus `workflow_dispatch`. Markdown-only changes (`**/*.md`, `docs/**`) are ignored so a documentation edit does not rebuild images or cancel a live deploy.
+
 ## 9.2 Secrets
 
 `PETROOPS_SSH_HOST`, `PETROOPS_SSH_USER`, `PETROOPS_SSH_KEY`. Environment `production`.

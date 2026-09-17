@@ -3,6 +3,8 @@
 ## ۹.۱ نمای کلی پایپ‌لاین
 فایل: [`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml)
 
+تغییر فقط روی فایل‌های Markdown / `docs/` پایپ‌لاین را اجرا نمی‌کند تا استقرار زنده کنسل نشود.
+
 ```
 push/PR → main
    │

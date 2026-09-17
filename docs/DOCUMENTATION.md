@@ -2,7 +2,7 @@
 
 **Language:** English first, then فارسی.
 
-GitHub landing: bilingual [`README.md`](../README.md).
+GitHub landing: bilingual [`README.md`](../README.md). This repository is a **public demo**; visit [https://aria-ai.ir](https://aria-ai.ir) to view and try the demos.
 
 ## English manuals
 

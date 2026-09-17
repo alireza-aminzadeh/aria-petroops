@@ -2,6 +2,7 @@
 
 **Language:** English first, then فارسی.  
 **Product:** Aria PetroOps (`petro.aria-ai.ir`)  
+**Kind:** Public demo — enter from [https://aria-ai.ir](https://aria-ai.ir)  
 **As of:** 13 September 2026
 
 ## English
@@ -43,5 +44,7 @@ Expected health: `GET https://petro.aria-ai.ir/health` → `status=ok`, `service
 ---
 
 ## فارسی
+
+این مخزن یک **دموی عمومی** است. برای مشاهده و کار کردن با دموها به [https://aria-ai.ir](https://aria-ai.ir) مراجعه کنید.
 
 فاز ۲ تله‌متری و امتیازدهی on-prem روی Production است. blending، خط لوله، Digital Twin و Temporal باز هستند. زمان‌بند حریصانهٔ نت با solver تولید یکی نیست. سلامت: `/health` باید `aria-petroops` را ok برگرداند.
