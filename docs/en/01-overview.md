@@ -6,11 +6,14 @@ English technical manual. Persian original: [`../01-overview.md`](../01-overview
 
 Integrated **asset, process, and energy intelligence** for oil, gas, and petrochemical units.
 
+Data collection, process analysis, and implementation of this project were carried out in **2024, 2025, and 2026**.
+
 | | |
 |---|---|
 | Public site | https://petro.aria-ai.ir |
 | GitHub | https://github.com/alireza-aminzadeh/aria-petroops |
 | Sister | [Aria SafeOps](https://github.com/alireza-aminzadeh/aria-safeops) |
+| Project period | 2024, 2025, and 2026 — data collection, process analysis, and implementation |
 
 ## 1.2 Why NestJS (not Symfony)
 
